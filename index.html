@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="../branding/branding_helper.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIG Root Cause Analysis (RCA) Tool</title>
+  
+  <!-- Google Fonts: Space Grotesk & Jost -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Shared Styles (Fallback is handled in local style.css) -->
+  <link rel="stylesheet" href="../shared/css/shared.css">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- CDNs for icons, excel parsing, and charts -->
+  <script src="https://unpkg.com/lucide@latest" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- App Container -->
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <a href="#" class="btn-back">
+          <i data-lucide="arrow-left"></i>
+          <span>Portal Hub</span>
+        </a>
+        <div class="header-title-block">
+          <h1>Root Cause Analysis</h1>
+          <span class="header-subtitle">TIG Incident Investigation &amp; Quality Prevention Tool</span>
+        </div>
+      </div>
+      <div class="header-right actions-group">
+        <button id="btn-dashboard-view" class="btn btn-secondary btn-icon active-tab-btn">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </button>
+        <button id="btn-predictive-view" class="btn btn-secondary btn-icon" style="gap: 6px;">
+          <i data-lucide="line-chart"></i>
+          <span>Predictive Risk</span>
+        </button>
+        <button id="btn-import-excel-trigger" class="btn btn-secondary btn-icon">
+          <i data-lucide="file-spreadsheet"></i>
+          <span>Import Incident</span>
+        </button>
+        <input type="file" id="input-excel-file" style="display: none;" accept=".xlsx,.xls">
+        <button id="btn-bulk-analyze" class="btn btn-secondary btn-icon" style="border-color: #10b981; color: #10b981; background: rgba(16,185,129,0.05); gap: 6px;">
+          <i data-lucide="cpu"></i>
+          <span>Bulk AI Analyze</span>
+        </button>
+        <button id="btn-new-rca" class="btn btn-primary btn-icon">
+          <i data-lucide="plus-circle"></i>
+          <span>New Analysis</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="main-layout">
+      
+      <!-- Tab 1: Dashboard -->
+      <section id="tab-dashboard" class="tab-pane active">
+        
+        <!-- Dashboard Overview Panels -->
+        <div class="dashboard-stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span>Total Investigations</span>
+              <i data-lucide="shield-alert" class="text-cyan"></i>
+            </div>
+            <div class="stat-value" id="stat-total-rca">0</div>
+            <div class="stat-footer text-muted">Incident investigations logged</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <span>RCA Completed</span>
+              <i data-lucide="check-circle" class="text-success"></i>
+            </div>
+            <div class="stat-value text-success" id="stat-completed-rca">0</div>
+            <div class="stat-footer text-muted">Detailed analyses finalized</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <span>Pending Action</span>
+              <i data-lucide="alert-triangle" class="text-orange"></i>
+            </div>
+            <div class="stat-value text-orange" id="stat-pending-rca">0</div>
+            <div class="stat-footer text-muted">Reports requiring investigation</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">
+              <span>Open Corrective Actions</span>
+              <i data-lucide="list-todo" class="text-purple"></i>
+            </div>
+            <div class="stat-value" id="stat-open-actions">0</div>
+            <div class="stat-footer text-muted">Assigned action items outstanding</div>
+          </div>
+        </div>
+
+        <!-- Pareto Trend and List View -->
+        <div class="dashboard-split-layout">
+          <!-- Left side: Investigations Table -->
+          <div class="card table-container">
+            <h3 class="card-title">
+              <i data-lucide="list" class="icon-sm text-cyan"></i>
+              <span>Active Investigation Registry</span>
+            </h3>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Incident ID</th>
+                    <th>Employee Name</th>
+                    <th>Incident Date</th>
+                    <th>Designation</th>
+                    <th>Primary Root Cause</th>
+                    <th>Status</th>
+                    <th style="text-align: center;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="rca-registry-body">
+                  <!-- Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Right side: Sidebar Charts Column -->
+          <div class="dashboard-sidebar-column" style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Pareto Root Cause Distribution -->
+            <div class="card chart-container">
+              <h3 class="card-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="bar-chart-2" class="icon-sm text-orange"></i>
+                  <span>Root Cause Frequency (Pareto)</span>
+                </div>
+                <button class="btn-action-icon" id="btn-maximize-pareto" title="Expand Chart" style="border: none; background: transparent; width: 24px; height: 24px; padding: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                  <i data-lucide="maximize-2" style="width: 14px; height: 14px; color: var(--text-secondary);"></i>
+                </button>
+              </h3>
+              <div class="chart-wrapper">
+                <canvas id="pareto-summary-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Incident Severity/Designation Breakdown Chart -->
+            <div class="card chart-container">
+              <h3 class="card-title">
+                <i data-lucide="pie-chart" class="icon-sm text-cyan"></i>
+                <span>Incident Severity Distribution</span>
+              </h3>
+              <div class="chart-wrapper" style="height: 200px; position: relative;">
+                <canvas id="severity-distribution-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab: Predictive Risk Center -->
+      <section id="tab-predictive-risk" class="tab-pane hidden">
+        
+        <!-- Header Controls Row -->
+        <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h2 style="font-family:var(--font-title); font-size:18px; font-weight:700; color:#fff; margin:0;">Predictive Safety Risk Center</h2>
+          <button class="btn btn-primary btn-icon" id="btn-print-risk-summary">
+            <i data-lucide="printer"></i> Print Risk Summary Report
+          </button>
+        </div>
+
+        <!-- Explanation Card -->
+        <div class="card" style="margin-bottom: 24px;">
+          <h3 class="card-title">
+            <i data-lucide="info" class="icon-sm text-cyan"></i>
+            <span>Safety Risk Forecasting Model</span>
+          </h3>
+          <p class="text-secondary" style="font-size: 13px; line-height: 1.5; margin-top: 8px;">
+            The Predictive Safety Risk Index computes real-time exposure scores (from 0.0 to 10.0) based on three safety metrics: 
+            <strong>Frequency Factor</strong> (number of incidents), 
+            <strong>Recency Factor</strong> (days elapsed since last incident, decaying over a 12-month curve), and 
+            <strong>Severity Factor</strong> (hazard level of the incident types, e.g. Recordable, Lost Workday, First Aid). 
+            This identifies high-risk jobsites, crafts, and supervisors so you can proactively schedule safety stand-downs, tool audits, or JSA compliance inspections before the next incident occurs.
+          </p>
+        </div>
+
+        <!-- Leaderboards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;">
+          
+          <!-- Locations Leaderboard -->
+          <div class="card">
+            <h3 class="card-title">
+              <i data-lucide="map-pin" class="icon-sm text-cyan"></i>
+              <span>Location Risk Index</span>
+            </h3>
+            <div id="risk-location-list" style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+              <!-- Dynamic Rows -->
+            </div>
+          </div>
+
+          <!-- Crafts Leaderboard -->
+          <div class="card">
+            <h3 class="card-title">
+              <i data-lucide="wrench" class="icon-sm text-orange"></i>
+              <span>Craft Risk Index</span>
+            </h3>
+            <div id="risk-craft-list" style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+              <!-- Dynamic Rows -->
+            </div>
+          </div>
+
+          <!-- Supervisors Leaderboard -->
+          <div class="card">
+            <h3 class="card-title">
+              <i data-lucide="users" class="icon-sm text-purple"></i>
+              <span>Supervisor Risk Index</span>
+            </h3>
+            <div id="risk-supervisor-list" style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+              <!-- Dynamic Rows -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Proactive Action Plan Recommendation Card -->
+        <div class="card">
+          <h3 class="card-title" style="border-bottom: 1px solid rgba(148,163,184,0.08); padding-bottom:12px; margin-bottom:16px;">
+            <i data-lucide="shield-alert" class="icon-sm text-success"></i>
+            <span>Proactive Safety Action Plan</span>
+          </h3>
+          <div id="risk-proactive-actions" style="display:flex; flex-direction:column; gap:12px;">
+            <!-- Dynamic Actions -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 2: RCA Wizard -->
+      <section id="tab-wizard" class="tab-pane hidden">
+        <div class="wizard-container">
+          
+          <!-- Wizard Steps Left Sidebar -->
+          <aside class="wizard-steps-sidebar">
+            <div class="wizard-step active" data-step="1">
+              <span class="step-num">1</span>
+              <span class="step-label">Incident Profile</span>
+            </div>
+            <div class="wizard-step" data-step="2">
+              <span class="step-num">2</span>
+              <span class="step-label">Driving Questions</span>
+            </div>
+            <div class="wizard-step" data-step="3">
+              <span class="step-num">3</span>
+              <span class="step-label">5 Whys Analysis</span>
+            </div>
+            <div class="wizard-step" data-step="4">
+              <span class="step-num">4</span>
+              <span class="step-label">Verification Matrix</span>
+            </div>
+            <div class="wizard-step" data-step="5">
+              <span class="step-num">5</span>
+              <span class="step-label">Root Cause Determ.</span>
+            </div>
+            <div class="wizard-step" data-step="6">
+              <span class="step-num">6</span>
+              <span class="step-label">Corrective Actions</span>
+            </div>
+
+            <!-- AI Engine Tool -->
+            <div class="ai-generation-box">
+              <h4 class="ai-box-title">
+                <i data-lucide="sparkles"></i>
+                <span>Gemini AI Analyst</span>
+              </h4>
+              <p class="ai-box-desc">Automatically analyze the incident profile to generate the 5 Whys, KT matrix, and report draft.</p>
+              <button id="btn-ai-generate" class="btn btn-primary btn-icon btn-full-width">
+                <i data-lucide="cpu"></i>
+                <span>Generate RCA</span>
+              </button>
+              <div id="ai-loading-indicator" class="hidden">
+                <div class="spinner"></div>
+                <span>Analyzing incident data...</span>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Wizard Step Content Wrapper -->
+          <div class="wizard-content-wrapper">
+            <form id="rca-editor-form">
+              <input type="hidden" id="rca-record-id">
+
+              <!-- Step 1: Incident Profile -->
+              <div class="step-content active" id="step-content-1">
+                <h2 class="step-title">Incident Profile Data</h2>
+                <p class="step-subtitle">Verify and expand the incident investigation metadata from the Supervisor's Report.</p>
+                
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="f-igz-id">Incident / IGZ ID *</label>
+                    <input type="text" id="f-igz-id" placeholder="e.g. INC-20260715-2153" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-employee-name">Employee Name *</label>
+                    <input type="text" id="f-employee-name" placeholder="e.g. Leonel Ivan Portillo" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-date">Date of Incident *</label>
+                    <input type="date" id="f-date" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-time">Time of Incident *</label>
+                    <input type="text" id="f-time" placeholder="e.g. 09:45 AM" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-location">Incident Location *</label>
+                    <input type="text" id="f-location" placeholder="e.g. NRG Texas Power, LLC" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-dept-location">Department Location</label>
+                    <input type="text" id="f-dept-location" placeholder="e.g. Houston">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-supervisor">Immediate Supervisor *</label>
+                    <input type="text" id="f-supervisor" placeholder="e.g. Dale E Jones" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-business-unit">Business Unit</label>
+                    <input type="text" id="f-business-unit" placeholder="e.g. E&I">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-group">Group</label>
+                    <input type="text" id="f-group" placeholder="e.g. Construction">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-craft">Craft / Task *</label>
+                    <input type="text" id="f-craft" placeholder="e.g. Electrical" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-job-title">Job Title</label>
+                    <input type="text" id="f-job-title" placeholder="e.g. Electrician I">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-time-in-craft">Time in Craft (Yrs/Mths)</label>
+                    <input type="text" id="f-time-in-craft" placeholder="e.g. 4 years">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-date-hired">Date Hired</label>
+                    <input type="date" id="f-date-hired">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-hours-on-duty">Hours on Duty Prior to Injury *</label>
+                    <input type="text" id="f-hours-on-duty" placeholder="e.g. 3 - 6 Hours" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-drug-screen">Drug Screen Performed? *</label>
+                    <select id="f-drug-screen" required>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                      <option value="Pending">Pending</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-incident-designation">Incident Designation *</label>
+                    <select id="f-incident-designation" required>
+                      <option value="First Aid">First Aid</option>
+                      <option value="Near Miss">Near Miss</option>
+                      <option value="Medical Treatment (Recordable)">Medical Treatment (Recordable)</option>
+                      <option value="Restricted Workday Case (Recordable)">Restricted Workday Case (Recordable)</option>
+                      <option value="Lost Workday Case (Recordable)">Lost Workday Case (Recordable)</option>
+                      <option value="Property Damage (Client)">Property Damage (Client)</option>
+                      <option value="Equipment Damage (TIG)">Equipment Damage (TIG)</option>
+                      <option value="Environmental Spill">Environmental Spill</option>
+                      <option value="Safety violation">Safety violation</option>
+                      <option value="Report only">Report only</option>
+                      <option value="Fatality">Fatality</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row-full" style="margin-top: 16px;">
+                  <div class="form-group">
+                    <label for="f-description">Description of Incident (Who, What, How) *</label>
+                    <textarea id="f-description" rows="4" placeholder="Detail the timeline, actions, and mechanism of the incident..." required></textarea>
+                  </div>
+                </div>
+
+                <div class="form-sub-header">Safety Observations &amp; Discrepancies</div>
+                
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="f-jha-disc">JHA/JSA Discrepancies</label>
+                    <input type="text" id="f-jha-disc" placeholder="e.g. Potential Hazards poorly described">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-permit-disc">Permit Discrepancies</label>
+                    <input type="text" id="f-permit-disc" placeholder="e.g. No discrepancies">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-supervision-issues">Supervision / Management Issues</label>
+                    <input type="text" id="f-supervision-issues" placeholder="e.g. Supervisor not present at time of incident">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-shortcuts">Evidence of Shortcuts</label>
+                    <input type="text" id="f-shortcuts" placeholder="e.g. Safety measures bypassed">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-complicit-behaviors">Complicit Behaviours</label>
+                    <input type="text" id="f-complicit-behaviors" placeholder="e.g. Peers failed to intervene">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-unsafe-conditions">Possible Unsafe Conditions</label>
+                    <input type="text" id="f-unsafe-conditions" placeholder="e.g. Travel Path Hazards#Inadequate or improper PPE">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-unsafe-acts">Possible Unsafe Acts</label>
+                    <input type="text" id="f-unsafe-acts" placeholder="e.g. Failure to warn">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-ppe-details">Personal Protective Equipment (PPE) Details</label>
+                    <input type="text" id="f-ppe-details" placeholder="e.g. Employees boots are worn">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-incident-type">Incident Type</label>
+                    <input type="text" id="f-incident-type" placeholder="e.g. Fall (same level)#Slipping/Tripping">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-body-injured">Body Part Injured</label>
+                    <input type="text" id="f-body-injured" placeholder="e.g. Knee">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-nature-injury">Nature of Injury</label>
+                    <input type="text" id="f-nature-injury" placeholder="e.g. Other">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-work-attributes">Work Attributes</label>
+                    <input type="text" id="f-work-attributes" placeholder="e.g. Pulling Cable">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-env-conditions">Environmental Conditions</label>
+                    <input type="text" id="f-env-conditions" placeholder="e.g. Rain/Wet Conditions">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-investigation-team">Investigation Team Members</label>
+                    <input type="text" id="f-investigation-team" placeholder="e.g. Kevin Reynolds">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-prev-actions">Actions to Prevent Incident Re-occurrence</label>
+                    <input type="text" id="f-prev-actions" placeholder="e.g. Conduct Safety stand down#Reevaluate PPE">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-initial-comments">Other / Comments</label>
+                    <input type="text" id="f-initial-comments" placeholder="e.g. Before returning to job area the concrete will be cleared">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 2: Driving Questions -->
+              <div class="step-content hidden" id="step-content-2">
+                <h2 class="step-title">Driving Questions Questionnaire</h2>
+                <p class="step-subtitle">Identify contributing factors by answering standard checklist questions in key compliance categories.</p>
+                
+                <div class="questions-accordion">
+                  <!-- Documentation Section -->
+                  <div class="accordion-section card">
+                    <h4 class="accordion-toggle">
+                      <i data-lucide="file-text" class="text-cyan"></i>
+                      <span>Documentation (JSA &amp; Permits)</span>
+                    </h4>
+                    <div class="accordion-content">
+                      <div class="question-row">
+                        <span>Was the JSA complete, accurate, and signed by all crew members?</span>
+                        <select id="dq-doc-jsa" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="question-row">
+                        <span>Were relevant safe work procedures (SWPs) and permits reviewed and followed?</span>
+                        <select id="dq-doc-procedures" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <textarea id="dq-doc-notes" rows="2" placeholder="Documentation notes, discrepancies, or specifics..."></textarea>
+                    </div>
+                  </div>
+
+                  <!-- Tools & Equipment -->
+                  <div class="accordion-section card">
+                    <h4 class="accordion-toggle">
+                      <i data-lucide="wrench" class="text-orange"></i>
+                      <span>Tools &amp; Equipment (including PPE)</span>
+                    </h4>
+                    <div class="accordion-content">
+                      <div class="question-row">
+                        <span>Was the equipment and tools in good working order?</span>
+                        <select id="dq-tools-order" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                          <option value="N/A" selected>N/A</option>
+                        </select>
+                      </div>
+                      <div class="question-row">
+                        <span>Were tools and PPE used as intended and appropriate for the task?</span>
+                        <select id="dq-tools-ppe" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <textarea id="dq-tools-notes" rows="2" placeholder="Equipment/PPE issues or boot condition observations..."></textarea>
+                    </div>
+                  </div>
+
+                  <!-- Supervision -->
+                  <div class="accordion-section card">
+                    <h4 class="accordion-toggle">
+                      <i data-lucide="users" class="text-cyan"></i>
+                      <span>Supervision &amp; Oversight</span>
+                    </h4>
+                    <div class="accordion-content">
+                      <div class="question-row">
+                        <span>Was supervision adequate and present during critical tasks?</span>
+                        <select id="dq-sup-present" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="question-row">
+                        <span>Were unsafe acts or conditions addressed immediately by supervisors?</span>
+                        <select id="dq-sup-intervention" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <textarea id="dq-sup-notes" rows="2" placeholder="Supervisory presence or delegation notes..."></textarea>
+                    </div>
+                  </div>
+
+                  <!-- Knowledge & Training -->
+                  <div class="accordion-section card">
+                    <h4 class="accordion-toggle">
+                      <i data-lucide="graduation-cap" class="text-orange"></i>
+                      <span>Knowledge &amp; Training</span>
+                    </h4>
+                    <div class="accordion-content">
+                      <div class="question-row">
+                        <span>Was the employee trained, qualified, and experienced in the task?</span>
+                        <select id="dq-kn-trained" class="dq-select">
+                          <option value="Yes" selected>Yes</option>
+                          <option value="No">No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="question-row">
+                        <span>Were all hazard communications and safe procedures understood?</span>
+                        <select id="dq-kn-hazard-comm" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <textarea id="dq-kn-notes" rows="2" placeholder="Describe craft training, experience, or communication gaps..."></textarea>
+                    </div>
+                  </div>
+
+                  <!-- Procedural Compliance -->
+                  <div class="accordion-section card">
+                    <h4 class="accordion-toggle">
+                      <i data-lucide="clipboard-check" class="text-cyan"></i>
+                      <span>Procedural Compliance</span>
+                    </h4>
+                    <div class="accordion-content">
+                      <div class="question-row">
+                        <span>Were established procedures and policies followed without deviation?</span>
+                        <select id="dq-comp-followed" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="question-row">
+                        <span>Was minimum PPE strictly used and enforced?</span>
+                        <select id="dq-comp-ppe" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <textarea id="dq-comp-notes" rows="2" placeholder="Describe specific procedure or PPE guide non-compliances..."></textarea>
+                    </div>
+                  </div>
+
+                  <!-- Shortcuts & Pressure -->
+                  <div class="accordion-section card">
+                    <h4 class="accordion-toggle">
+                      <i data-lucide="gauge" class="text-orange"></i>
+                      <span>Shortcuts &amp; Pressure</span>
+                    </h4>
+                    <div class="accordion-content">
+                      <div class="question-row">
+                        <span>Were safety measures bypassed to meet production/schedule targets?</span>
+                        <select id="dq-short-bypassed" class="dq-select">
+                          <option value="Yes" selected>Yes</option>
+                          <option value="No">No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="question-row">
+                        <span>Did the employee feel undue pressure to complete the task quickly?</span>
+                        <select id="dq-short-pressure" class="dq-select">
+                          <option value="Yes" selected>Yes</option>
+                          <option value="No">No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <textarea id="dq-short-notes" rows="2" placeholder="Details regarding timeline, schedule, or task pressure..."></textarea>
+                    </div>
+                  </div>
+
+                  <!-- Environmental Conditions -->
+                  <div class="accordion-section card">
+                    <h4 class="accordion-toggle">
+                      <i data-lucide="cloud-rain" class="text-cyan"></i>
+                      <span>Environmental Conditions</span>
+                    </h4>
+                    <div class="accordion-content">
+                      <div class="question-row">
+                        <span>Did weather, lighting, or surface conditions contribute to the incident?</span>
+                        <select id="dq-env-contributed" class="dq-select">
+                          <option value="Yes" selected>Yes</option>
+                          <option value="No">No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="question-row">
+                        <span>Were environmental hazards uncontrollable or unforeseen?</span>
+                        <select id="dq-env-unforeseen" class="dq-select">
+                          <option value="Yes">Yes</option>
+                          <option value="No" selected>No</option>
+                          <option value="N/A">N/A</option>
+                        </select>
+                      </div>
+                      <textarea id="dq-env-notes" rows="2" placeholder="Rain, wet surfaces, algae, lighting, or wind details..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 3: 5 Whys Analysis -->
+              <div class="step-content hidden" id="step-content-3">
+                <h2 class="step-title">5 Whys Analysis</h2>
+                <p class="step-subtitle">Trace the sequence of events backward from the effect to find the underlying procedural root cause.</p>
+                
+                <div class="whys-chain card">
+                  <div class="why-row">
+                    <div class="why-badge">Incident Effect</div>
+                    <textarea id="why-incident" rows="2" placeholder="e.g. Employee sustained left knee injury due to slip on wet/algae concrete..."></textarea>
+                  </div>
+                  
+                  <div class="why-row">
+                    <div class="why-badge">Why 1</div>
+                    <textarea id="why-1" rows="2" placeholder="Why did the effect occur?"></textarea>
+                  </div>
+                  
+                  <div class="why-row">
+                    <div class="why-badge">Why 2</div>
+                    <textarea id="why-2" rows="2" placeholder="Why did that happen?"></textarea>
+                  </div>
+                  
+                  <div class="why-row">
+                    <div class="why-badge">Why 3</div>
+                    <textarea id="why-3" rows="2" placeholder="Why?"></textarea>
+                  </div>
+                  
+                  <div class="why-row">
+                    <div class="why-badge">Why 4</div>
+                    <textarea id="why-4" rows="2" placeholder="Why?"></textarea>
+                  </div>
+                  
+                  <div class="why-row">
+                    <div class="why-badge">Why 5</div>
+                    <textarea id="why-5" rows="2" placeholder="Why? (Procedural origin)"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 4: Verification Matrix -->
+              <div class="step-content hidden" id="step-content-4">
+                <h2 class="step-title">Verification &amp; Test Matrix</h2>
+                <p class="step-subtitle">Verify the primary cause boundaries using Kepner-Tregoe Analysis and establish Pareto factors.</p>
+
+                <!-- Kepner-Tregoe Problem Specification -->
+                <div class="card kt-matrix-container">
+                  <h3 class="card-title text-cyan">Kepner-Tregoe (KT) "Is / Is Not" Matrix</h3>
+                  <p class="card-desc">Compare the details of what occurred with what could have, but did not, occur to isolate unique distinctions.</p>
+                  
+                  <div class="table-wrapper">
+                    <table class="kt-table">
+                      <thead>
+                        <tr>
+                          <th>Dimension</th>
+                          <th>IS (Observed Reality)</th>
+                          <th>IS NOT (Could have been, but wasn't)</th>
+                          <th>Distinctions / Unique Facts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td class="kt-dim">WHAT (Identity)</td>
+                          <td><input type="text" id="kt-what-is" placeholder="e.g. Left knee joint injury"></td>
+                          <td><input type="text" id="kt-what-isnot" placeholder="e.g. Head, back, or hand injury"></td>
+                          <td><input type="text" id="kt-what-dist" placeholder="e.g. Slipping/tripping on level walking path"></td>
+                        </tr>
+                        <tr>
+                          <td class="kt-dim">WHERE (Geography)</td>
+                          <td><input type="text" id="kt-where-is" placeholder="e.g. NRG Power, Houston (concrete travel path)"></td>
+                          <td><input type="text" id="kt-where-isnot" placeholder="e.g. Offsite or elevated structural platform"></td>
+                          <td><input type="text" id="kt-where-dist" placeholder="e.g. Concrete surface covered with algae and water"></td>
+                        </tr>
+                        <tr>
+                          <td class="kt-dim">WHEN (Timeline)</td>
+                          <td><input type="text" id="kt-when-is" placeholder="e.g. July 14, 2026 at 09:45 AM (3-6 hrs on duty)"></td>
+                          <td><input type="text" id="kt-when-isnot" placeholder="e.g. Start of shift or late at night (fatigue-prone)"></td>
+                          <td><input type="text" id="kt-when-dist" placeholder="e.g. Day shift, normal weather wetness from rain"></td>
+                        </tr>
+                        <tr>
+                          <td class="kt-dim">EXTENT (Magnitude)</td>
+                          <td><input type="text" id="kt-extent-is" placeholder="e.g. One employee, First Aid knee strain"></td>
+                          <td><input type="text" id="kt-extent-isnot" placeholder="e.g. Multiple employees or Lost Time case"></td>
+                          <td><input type="text" id="kt-extent-dist" placeholder="e.g. Footwear condition; boots had worn tread"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="margin-top: 12px;">
+                    <label for="kt-probable-cause" style="font-weight: 600; font-size: 12px; display: block; margin-bottom: 6px;">KT Most Probable Cause Conclusion</label>
+                    <textarea id="kt-probable-cause" rows="2" placeholder="Summarize the most probable cause based on the IS/IS NOT distinctions..."></textarea>
+                  </div>
+                </div>
+
+                <!-- Local Pareto Verification Weights -->
+                <div class="card pareto-matrix-container" style="margin-top: 16px;">
+                  <h3 class="card-title text-orange">Pareto Cause Weights (%)</h3>
+                  <p class="card-desc">Allocate the percentage weight contribution of the different categories for this incident (Total must equal 100%).</p>
+                  
+                  <div class="pareto-sliders-grid">
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span>Procedural Non-Compliance</span>
+                        <span id="v-pareto-compliance">40%</span>
+                      </div>
+                      <input type="range" id="sl-pareto-compliance" min="0" max="100" value="40" class="pareto-slider">
+                    </div>
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span>Inadequate PPE / Footwear</span>
+                        <span id="v-pareto-ppe">25%</span>
+                      </div>
+                      <input type="range" id="sl-pareto-ppe" min="0" max="100" value="25" class="pareto-slider">
+                    </div>
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span>Supervisor Absence / Lapses</span>
+                        <span id="v-pareto-supervision">15%</span>
+                      </div>
+                      <input type="range" id="sl-pareto-supervision" min="0" max="100" value="15" class="pareto-slider">
+                    </div>
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span>Peer Failure / Complicity</span>
+                        <span id="v-pareto-complicity">10%</span>
+                      </div>
+                      <input type="range" id="sl-pareto-complicity" min="0" max="100" value="10" class="pareto-slider">
+                    </div>
+                    <div class="slider-group">
+                      <div class="slider-header">
+                        <span>Environmental Conditions</span>
+                        <span id="v-pareto-env">10%</span>
+                      </div>
+                      <input type="range" id="sl-pareto-env" min="0" max="100" value="10" class="pareto-slider">
+                    </div>
+                  </div>
+                  <div class="slider-total-bar" id="pareto-total-bar">
+                    Total Allocation: <span id="pareto-total-val">100</span>% <span id="pareto-validation-msg" class="text-success">(Valid)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 5: Root Cause Determination -->
+              <div class="step-content hidden" id="step-content-5">
+                <h2 class="step-title">Root Cause Determination &amp; Conclusion</h2>
+                <p class="step-subtitle">Identify the primary root cause and provide clear justifications ruling out alternate causes.</p>
+                
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label for="f-primary-cause">Primary Root Cause *</label>
+                    <select id="f-primary-cause" class="accent-select" required>
+                      <option value="Inadequate Preparation and Planning">Root Cause 1: Inadequate Preparation and Planning</option>
+                      <option value="Equipment or Resource Failure">Root Cause 2: Equipment or Resource Failure</option>
+                      <option value="Fatigue">Root Cause 3: Fatigue</option>
+                      <option value="Procedural Non-Compliance" selected>Root Cause 4: Procedural Non-Compliance</option>
+                      <option value="Pressure and Shortcuts">Root Cause 5: Pressure and Shortcuts</option>
+                      <option value="Knowledge Gaps">Root Cause 6: Knowledge Gaps</option>
+                      <option value="Environmental Interference">Root Cause 7: Environmental Interference</option>
+                      <option value="Complacency">Root Cause 8: Complacency</option>
+                      <option value="Deliberate Violation">Root Cause 9: Deliberate Violation</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-contributing-factors">Contributing Factors List (Bullet Points)</label>
+                    <textarea id="f-contributing-factors" rows="3" placeholder="• Deficient JSA hazard description&#10;• Worn boots lacking traction&#10;• Supervisor absent..."></textarea>
+                  </div>
+                </div>
+
+                <div class="form-row-full" style="margin-top: 16px;">
+                  <div class="form-group">
+                    <label for="f-analysis-summary">Analysis Summary (Primary Root Cause Justification) *</label>
+                    <textarea id="f-analysis-summary" rows="5" placeholder="Detailed analysis linking incident findings to the primary cause..." required></textarea>
+                  </div>
+                </div>
+
+                <div class="card" style="margin-top: 16px;">
+                  <h4 style="font-family: var(--font-title); font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--tig-orange); margin-bottom: 12px;">Alternative Root Causes Ruled Out</h4>
+                  <div class="ruled-out-grid">
+                    <div class="form-group">
+                      <label>RC 1: Planning / Prep</label>
+                      <input type="text" id="ro-prep" placeholder="Why ruled out...">
+                    </div>
+                    <div class="form-group">
+                      <label>RC 2: Equip / Resource</label>
+                      <input type="text" id="ro-equip" placeholder="Why ruled out...">
+                    </div>
+                    <div class="form-group">
+                      <label>RC 3: Fatigue</label>
+                      <input type="text" id="ro-fatigue" placeholder="Why ruled out...">
+                    </div>
+                    <div class="form-group">
+                      <label>RC 5: Pressure / Shortcuts</label>
+                      <input type="text" id="ro-shortcuts" placeholder="Why ruled out...">
+                    </div>
+                    <div class="form-group">
+                      <label>RC 6: Knowledge Gaps</label>
+                      <input type="text" id="ro-knowledge" placeholder="Why ruled out...">
+                    </div>
+                    <div class="form-group">
+                      <label>RC 7: Environmental</label>
+                      <input type="text" id="ro-env" placeholder="Why ruled out...">
+                    </div>
+                    <div class="form-group">
+                      <label>RC 8: Complacency</label>
+                      <input type="text" id="ro-complacency" placeholder="Why ruled out...">
+                    </div>
+                    <div class="form-group">
+                      <label>RC 9: Deliberate Violation</label>
+                      <input type="text" id="ro-deliberate" placeholder="Why ruled out...">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row-full" style="margin-top: 16px;">
+                  <div class="form-group">
+                    <label for="f-conclusion">RCA Summary Conclusion *</label>
+                    <textarea id="f-conclusion" rows="3" placeholder="State final outcome linking primary cause, contributing factors, and mechanism..." required></textarea>
+                  </div>
+                </div>
+
+                <!-- Violations Identified -->
+                <div class="card" style="margin-top: 16px;">
+                  <h4 style="font-family: var(--font-title); font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--tig-cyan); margin-bottom: 12px;">Policy &amp; SWP Violations Identified</h4>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label for="v-swp33">SWP-033 Job Safety Analysis (JSA)</label>
+                      <textarea id="v-swp33" rows="3" placeholder="Detail any JSA process violations..."></textarea>
+                    </div>
+                    <div class="form-group">
+                      <label for="v-swp47">SWP-047 Personal Protective Equipment</label>
+                      <textarea id="v-swp47" rows="3" placeholder="Detail any PPE compliance violations..."></textarea>
+                    </div>
+                  </div>
+                  <div class="form-row-full" style="margin-top: 10px;">
+                    <div class="form-group">
+                      <label for="v-other">Supervision &amp; Other Guidelines</label>
+                      <textarea id="v-other" rows="2" placeholder="Oversight or peer intervention policy violations..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 6: Corrective Actions -->
+              <div class="step-content hidden" id="step-content-6">
+                <h2 class="step-title">Potential Corrective Actions</h2>
+                <p class="step-subtitle">Establish 3-4 specific, actionable steps with assigned owners and due dates to address the root cause.</p>
+                
+                <div class="card">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-family: var(--font-title); font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Corrective Action Registry</span>
+                    <button type="button" id="btn-add-action" class="btn btn-secondary btn-icon" style="padding: 6px 12px; font-size: 11px;">
+                      <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i> Add Action
+                    </button>
+                  </div>
+                  <div class="table-wrapper">
+                    <table class="actions-builder-table">
+                      <thead>
+                        <tr>
+                          <th>Action Title</th>
+                          <th>Detailed Description</th>
+                          <th>Responsible Party</th>
+                          <th>Due Date</th>
+                          <th style="width: 80px; text-align: center;">Remove</th>
+                        </tr>
+                      </thead>
+                      <tbody id="actions-builder-body">
+                        <!-- Dynamic Input Rows -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="form-row-full" style="margin-top: 16px;">
+                  <div class="form-group">
+                    <label for="f-additional-notes">Additional Investigation Notes</label>
+                    <textarea id="f-additional-notes" rows="3" placeholder="Any further systemic observations, witness statements, drug/alcohol test context, or details..."></textarea>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Wizard Bottom Controls Bar -->
+        <footer class="wizard-footer">
+          <button id="btn-wizard-prev" class="btn btn-secondary btn-icon" disabled>
+            <i data-lucide="arrow-left"></i> Prev Step
+          </button>
+          <div class="wizard-footer-right">
+            <button id="btn-wizard-cancel" class="btn btn-secondary">Cancel</button>
+            <button id="btn-wizard-save" class="btn btn-secondary btn-icon">
+              <i data-lucide="save"></i> Save Draft
+            </button>
+            <button id="btn-wizard-next" class="btn btn-primary btn-icon">
+              Next Step <i data-lucide="arrow-right"></i>
+            </button>
+            <button id="btn-wizard-finalize" class="btn btn-primary btn-icon hidden">
+              <i data-lucide="check-square"></i> Finalize &amp; View Report
+            </button>
+          </div>
+        </footer>
+      </section>
+
+      <!-- Tab 3: Report Preview -->
+      <section id="tab-report" class="tab-pane hidden">
+        <div class="report-controls-panel no-print">
+          <button id="btn-report-back-wizard" class="btn btn-secondary btn-icon">
+            <i data-lucide="edit-3"></i> Edit Investigation
+          </button>
+          <div style="margin-left: auto; display: flex; gap: 8px;">
+            <button id="btn-report-back-dash" class="btn btn-secondary">Back to Dashboard</button>
+            <button id="btn-report-print" class="btn btn-primary btn-icon">
+              <i data-lucide="printer"></i> Print / Save PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Printable Document Canvas -->
+        <div class="report-document-canvas" id="printable-report-canvas">
+          <!-- Document Header -->
+          <header class="rep-header">
+            <div class="rep-header-left">
+              <div class="rep-logo-text">Taurus Industrial Group</div>
+              <div class="rep-logo-sub">Incident Quality &amp; Safety Division</div>
+            </div>
+            <div class="rep-header-right">
+              <div class="rep-title">Root Cause Analysis (RCA) Report</div>
+              <div class="rep-meta-line">Incident ID: <strong id="rep-hdr-igz">INC-20260715-2153</strong></div>
+              <div class="rep-meta-line">Status: <span id="rep-hdr-status" class="status-badge-inline">Completed</span></div>
+            </div>
+          </header>
+
+          <!-- Section 1: Incident Profile Metadata -->
+          <section class="rep-section">
+            <h3 class="rep-sec-title">1. Incident General Information</h3>
+            <table class="rep-meta-table">
+              <tr>
+                <td class="rep-lbl">Employee Name:</td>
+                <td id="rep-employee"> Leonel Ivan Portillo</td>
+                <td class="rep-lbl">Date &amp; Time:</td>
+                <td id="rep-datetime">07-14-2026 @ 09:45 AM</td>
+              </tr>
+              <tr>
+                <td class="rep-lbl">Location:</td>
+                <td id="rep-location">NRG Texas Power, LLC - Houston</td>
+                <td class="rep-lbl">Supervisor:</td>
+                <td id="rep-supervisor">Dale E Jones</td>
+              </tr>
+              <tr>
+                <td class="rep-lbl">Craft &amp; Job:</td>
+                <td id="rep-craft">Electrical (Electrician I)</td>
+                <td class="rep-lbl">Experience in Craft:</td>
+                <td id="rep-experience">4 years</td>
+              </tr>
+              <tr>
+                <td class="rep-lbl">Business Unit / Group:</td>
+                <td id="rep-bugroup">E&I / Construction</td>
+                <td class="rep-lbl">Hours on Duty:</td>
+                <td id="rep-hours">3 - 6 Hours</td>
+              </tr>
+              <tr>
+                <td class="rep-lbl">Incident Type / Injury:</td>
+                <td id="rep-type">Fall (same level) / Slipping/Tripping (Knee)</td>
+                <td class="rep-lbl">Drug Screen:</td>
+                <td id="rep-drug">Yes</td>
+              </tr>
+              <tr>
+                <td class="rep-lbl">Environmental:</td>
+                <td id="rep-env">Rain/Wet Conditions</td>
+                <td class="rep-lbl">Work Attributes:</td>
+                <td id="rep-attrib">Pulling Cable</td>
+              </tr>
+            </table>
+
+            <div class="rep-text-block">
+              <strong class="rep-block-title">Description of Incident (Who, What, How)</strong>
+              <p id="rep-description">A crew was assigned to elevate temporary cables...</p>
+            </div>
+          </section>
+
+          <!-- Section 2: Analysis & Root Cause Determination -->
+          <section class="rep-section">
+            <h3 class="rep-sec-title">2. Root Cause Determination</h3>
+            <div class="rep-highlight-box">
+              <strong>Primary Root Cause:</strong> <span id="rep-primary-cause" style="font-weight: 700;">Procedural Non-Compliance</span>
+            </div>
+            
+            <div class="rep-text-block">
+              <strong class="rep-block-title">Incident Analysis Summary</strong>
+              <p id="rep-analysis">Detailed explanation of the failure mechanism...</p>
+            </div>
+
+            <div class="rep-text-block">
+              <strong class="rep-block-title">Key Contributing Factors</strong>
+              <ul class="rep-bullets-list" id="rep-bullets-contrib">
+                <!-- Bullet points -->
+              </ul>
+            </div>
+
+            <div class="rep-text-block">
+              <strong class="rep-block-title">Conclusion Statement</strong>
+              <p id="rep-conclusion">Summary conclusion linking factors together...</p>
+            </div>
+          </section>
+
+          <!-- Section 3: Verification Methods -->
+          <section class="rep-section">
+            <h3 class="rep-sec-title">3. Verification &amp; Problem Isolation</h3>
+            
+            <div class="rep-text-block">
+              <strong class="rep-block-title">5 Whys Analysis</strong>
+              <div class="rep-whys-chain" id="rep-whys-list">
+                <!-- Whys list -->
+              </div>
+            </div>
+
+            <div class="rep-text-block">
+              <strong class="rep-block-title">Kepner-Tregoe Analysis Summary</strong>
+              <p id="rep-kt-summary">The incident occurred under x boundaries, ruling out y...</p>
+            </div>
+
+            <div class="rep-text-block">
+              <strong class="rep-block-title">Pareto Contribution Allocation</strong>
+              <table class="rep-pareto-table">
+                <thead>
+                  <tr>
+                    <th>Contributing Element</th>
+                    <th>Percentage Contribution</th>
+                    <th>Visual Distribution</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-pareto-rows">
+                  <!-- Row weights -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Section 4: Documented Violations -->
+          <section class="rep-section">
+            <h3 class="rep-sec-title">4. Procedure &amp; Safe Work Procedure (SWP) Violations</h3>
+            <div class="rep-violations-container">
+              <div class="rep-violation-box" id="rep-violation-jsa-box">
+                <strong>SWP-033 Job Safety Analysis (JSA):</strong>
+                <p id="rep-viol-jsa">Deficiencies and non-compliances...</p>
+              </div>
+              <div class="rep-violation-box" id="rep-violation-ppe-box">
+                <strong>SWP-047 Personal Protective Equipment (PPE):</strong>
+                <p id="rep-viol-ppe">Deficiencies in footwear and traction...</p>
+              </div>
+              <div class="rep-violation-box" id="rep-violation-other-box">
+                <strong>Oversight &amp; Safe Work Rules:</strong>
+                <p id="rep-viol-other">Supervisor presence and intervention lapses...</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section 5: Corrective Actions -->
+          <section class="rep-section page-break-before">
+            <h3 class="rep-sec-title">5. Potential Corrective Actions</h3>
+            <table class="rep-actions-table">
+              <thead>
+                <tr>
+                  <th style="width: 25%;">Action Title</th>
+                  <th style="width: 45%;">Detailed Action Description</th>
+                  <th style="width: 15%;">Responsible Party</th>
+                  <th style="width: 15%;">Due Date</th>
+                </tr>
+              </thead>
+              <tbody id="rep-actions-rows">
+                <!-- Actions -->
+              </tbody>
+            </table>
+          </section>
+
+          <!-- Section 6: Alternative Causes Ruled Out -->
+          <section class="rep-section">
+            <h3 class="rep-sec-title">6. Root Cause Ruling Out Rationale</h3>
+            <table class="rep-ruled-out-table">
+              <thead>
+                <tr>
+                  <th style="width: 35%;">Alternate Root Cause</th>
+                  <th style="width: 65%;">Rationale for Ruling Out / Excluding as Primary</th>
+                </tr>
+              </thead>
+              <tbody id="rep-ruled-out-rows">
+                <!-- Ruled out rows -->
+              </tbody>
+            </table>
+          </section>
+
+          <!-- Section 7: Additional Notes -->
+          <section class="rep-section" id="rep-add-notes-section">
+            <h3 class="rep-sec-title">7. Additional Investigation Notes</h3>
+            <p id="rep-additional-notes">Witness statements details...</p>
+          </section>
+
+          <!-- Sign-Off Block -->
+          <footer class="rep-footer">
+            <div class="sign-off-block">
+              <div class="sign-line">
+                <span class="sign-label">Safety Manager Signature:</span>
+                <span class="sign-placeholder">___________________________</span>
+                <span class="sign-label">Date:</span>
+                <span class="sign-placeholder">__________</span>
+              </div>
+              <div class="sign-line">
+                <span class="sign-label">Lead Investigator Signature:</span>
+                <span class="sign-placeholder">___________________________</span>
+                <span class="sign-label">Date:</span>
+                <span class="sign-placeholder">__________</span>
+              </div>
+            </div>
+            <div class="rep-footer-disclaimer">
+              Taurus Industrial Group Quality &amp; Safety Incident Investigation Form. Standard Form RCA-001.
+            </div>
+          </footer>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toast-container" class="hidden"></div>
+
+  <!-- Maximized Chart Modal -->
+  <div id="chart-modal-overlay" class="bulk-modal-backdrop hidden" style="z-index: 100001;">
+    <div class="bulk-modal-card" style="width: 90vw; max-width: 1100px; height: 80vh; display: flex; flex-direction: column; padding: 24px; background: #0f172a; border: 1.5px solid rgba(148, 163, 184, 0.15); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.85); box-sizing: border-box;">
+      <div class="bulk-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(148, 163, 184, 0.1); padding-bottom: 14px; margin-bottom: 16px; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i data-lucide="bar-chart-2" class="text-orange" style="width: 20px; height: 20px;"></i>
+          <h3 style="margin: 0; font-family: var(--font-title); font-size: 16px; font-weight: 700; color: #fff;">Root Cause Frequency (Pareto) - Expanded View</h3>
+        </div>
+        <button class="btn-action-icon text-secondary" id="btn-close-chart-modal" title="Close" style="width: 28px; height: 28px; background: transparent; border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+          <i data-lucide="x" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
+        </button>
+      </div>
+      <div style="flex: 1; min-height: 0; position: relative; width: 100%; height: calc(100% - 70px);">
+        <canvas id="maximized-pareto-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk AI Progress Modal -->
+  <div id="bulk-modal-overlay" class="bulk-modal-backdrop hidden">
+    <div class="bulk-modal-card">
+      <div class="bulk-modal-header">
+        <i data-lucide="cpu" class="bulk-cpu-icon"></i>
+        <h3>Bulk AI RCA Generator</h3>
+      </div>
+      <div class="bulk-modal-body">
+        <p id="bulk-progress-text">Preparing bulk generator...</p>
+        <div class="bulk-progress-bar-container">
+          <div id="bulk-progress-bar-fill"></div>
+        </div>
+        <p id="bulk-current-incident" class="bulk-incident-details">Scanning registry...</p>
+      </div>
+      <div class="bulk-modal-footer">
+        <button id="btn-cancel-bulk" class="btn btn-danger">
+          <i data-lucide="square"></i> Cancel Batch
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
