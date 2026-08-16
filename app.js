@@ -79,143 +79,62 @@ document.addEventListener('DOMContentLoaded', () => {
     "Deliberate Violation"
   ];
 
-  // --- Initial Mock Data Seed (Leonel Portillo Incident) ---
-  const SEED_RCA = {
-    id: "INC-20260715-2153",
-    igzId: "INC-20260715-2153",
-    employeeName: "543432 Leonel Ivan Portillo",
-    date: "2026-07-14",
-    time: "09:45 AM",
-    location: "NRG Texas Power, LLC",
-    deptLocation: "Houston, TX",
-    supervisor: "7049 Dale E Jones",
-    businessUnit: "E&I",
-    group: "Construction",
-    craft: "Electrical",
-    jobTitle: "Electrician I",
-    timeInCraft: "4 years",
-    dateHired: "2025-10-20",
-    hoursOnDuty: "3 - 6 Hours",
-    drugScreen: "Yes",
-    incidentDesignation: "First Aid",
-    description: `A crew was assigned to elevate temporary cables using rope to maintain proper cable clearance above grade. During this task, employees tied off the cables from an elevated structure using the mid-handrail as a support point. The injured employee received the rope from personnel on the ground and secured the cables as required.\n\nAfter securing the cables, the employee turned to walk away from the work area. As he did so, his right foot slipped on the concrete surface, causing his weight to shift abruptly onto his left leg. This sudden transfer of weight resulted in an injury to the employee’s left knee. At the time of the incident, the concrete surface where the employee was standing was covered with water and algae, creating a slippery walking and working condition.`,
-    
-    // Safety discrepancies
-    jhaDisc: "Potential Hazards poorly described",
-    permitDisc: "No discrepancies",
-    supervisionIssues: "Supervisor not present at time of incident",
-    shortcuts: "Safety measures bypassed",
-    complicitBehaviors: "Peers failed to intervene when unsafe actions were observed",
-    unsafeConditions: "Travel Path Hazards#Inadequate or improper PPE",
-    unsafeActs: "Failure to warn",
-    ppeDetails: "Other (worn boots did not provide adequate traction)",
-    incidentType: "Fall (same level)#Slipping/Tripping",
-    bodyInjured: "Knee",
-    natureInjury: "Other",
-    workAttributes: "Pulling Cable",
-    envConditions: "Rain/Wet Conditions",
-    investigationTeam: "Kevin Reynolds",
-    prevActions: "Conduct Safety stand down#Reevaluate PPE#Other",
-    initialComments: "Before returning to job area the concrete will be cleared of all algae.",
-
-    // Analysis results
-    status: "Completed",
-    primaryCause: "Procedural Non-Compliance",
-    contributingFactors: `• Multiple JSA discrepancies (crew not all signed on, basic job steps poorly described, potential hazards poorly described, mitigation steps insufficient, missing hazard controls, missing PPE requirements, crew did not know emergency evacuation routes, scope mismatch).\n• Inadequate or improper PPE (worn boots did not provide adequate traction for conditions).\n• Supervisor not present at time of incident and lapse in supervision oversight.\n• Peers failed to intervene/warn when unsafe actions/conditions were observed.\n• Evidence of shortcuts: safety measures bypassed, pressure to complete task.\n• Visible but unaddressed environmental/travel path hazards (water and algae on concrete travel path).`,
-    analysisSummary: `On July 14, 2026, at NRG Texas Power, LLC in Houston, TX, an electrical employee, Leonel Ivan Portillo, sustained a left knee injury while performing work to elevate temporary cables using rope. The primary root cause of this incident is Procedural Non-Compliance. The crew and employee deviated from established Taurus Industrial Group procedures for JSA completion (SWP-033), PPE selection and use (SWP-047), and safe work practices for addressing travel path hazards. \n\nThe JSA was severely deficient, failing to identify the visible slip hazard on concrete travel paths from algae and water, and did not specify PPE traction requirements. The supervisor was not present to ensure compliance, and peers failed to warn or intervene. While environmental conditions (rain, algae) were present, this was a foreseeable site hazard that established procedures should have identified and controlled.`,
-    
-    ruledOut: {
-      prep: "While JSA was deficient, this is a procedural compliance issue under JSA policies rather than basic planning failure.",
-      equip: "No equipment, tools, or structures failed. The footwear tread was worn, which is a PPE compliance issue.",
-      fatigue: "Employee had been on duty 3-6 hours prior to incident, with no evidence of fatigue.",
-      shortcuts: "Shortcuts were taken (bypassing safety measures), but this was secondary to the procedural failures in hazard identification.",
-      knowledge: "Employee has 4 years experience in craft; hazard recognition gaps reflect procedural negligence rather than a lack of training.",
-      env: "Rain/wet conditions and algae growth directly caused the slip, but this was a foreseeable and mitigable hazard that safe work procedures should have addressed.",
-      complacency: "Peers' failure to warn reflects complacency in safety culture, but is secondary to core JSA/PPE compliance failure.",
-      deliberate: "There is no evidence of willful intent; it represents negligence and oversight failure rather than a deliberate violation."
-    },
-
-    fiveWhys: [
-      { q: "Why did the employee sustain a left knee injury?", a: "His right foot slipped on the water- and algae-covered concrete surface, causing an abrupt shift of weight onto his left leg." },
-      { q: "Why did his foot slip?", a: "The concrete travel path was slippery due to water and algae growth, and the employee’s boots were worn and did not provide adequate traction for the conditions." },
-      { q: "Why was the employee exposed to this unmitigated slip hazard?", a: "The JSA failed to identify the travel path slip/trip hazard from algae/water, did not specify mitigation steps (cleaning/inspection), and did not verify slip-resistant footwear." },
-      { q: "Why were hazard identification, mitigation steps, and PPE controls not followed?", a: "The supervisor was not present to ensure JSA quality and site compliance, peers failed to intervene/warn, and there was pressure to complete the task quickly." },
-      { q: "Why was there non-compliance with JSA, PPE, and hazard control procedures?", a: "The crew did not adhere to established procedures for completing thorough JSAs (SWP-033), ensuring appropriate PPE for conditions (SWP-047), and fulfilling oversight responsibilities." }
-    ],
-
-    ktAnalysis: {
-      whatIs: "Left knee joint strain",
-      whatIsNot: "Head, back, or hand injury",
-      whatDist: "Slipping/tripping on level concrete travel path",
-      whereIs: "NRG Texas Power, LLC - Houston (concrete walkway)",
-      whereIsNot: "Offsite or elevated structural platform",
-      whereDist: "Concrete surface covered with water and algae",
-      whenIs: "July 14, 2026 at 09:45 AM (3-6 hours on duty)",
-      whenIsNot: "Start of shift or late at night (fatigue-prone hours)",
-      whenDist: "Day shift, normal weather wetness from rain",
-      extentIs: "One employee, First Aid injury",
-      extentIsNot: "Multiple employees or Lost Time case",
-      extentDist: "Worn tread on employee's work boots",
-      probableCause: "Procedural Non-Compliance, as it encompasses deviations from JSA completion (SWP-033), PPE traction requirements (SWP-047), and supervisory oversight."
-    },
-
-    pareto: {
-      compliance: 40,
-      ppe: 25,
-      supervision: 15,
-      complicity: 10,
-      env: 10
-    },
-
-    drivingOutcome: {
-      docJsa: "No",
-      docProcedures: "No",
-      docNotes: "The JSA had numerous discrepancies: crew not all signed on, basic steps and hazards poorly described, missing controls/PPE.",
-      toolsOrder: "N/A",
-      toolsPpe: "No",
-      toolsNotes: "Employee's footwear was worn and did not provide adequate traction for the slippery wet/algae concrete path.",
-      supPresent: "No",
-      supIntervention: "No",
-      supNotes: "Supervisor was absent and did not verify JSA completeness, site conditions, or PPE compliance.",
-      knTrained: "Yes",
-      knHazardComm: "No",
-      knNotes: "Electrician had 4 years in craft but failed to recognize/communicate the visible slip hazard in the JSA.",
-      compFollowed: "No",
-      compPpe: "No",
-      compNotes: "Violated SWP-033 (JSA quality/completion) and SWP-047 (PPE compliance for slip-resistant footwear).",
-      shortBypassed: "Yes",
-      shortPressure: "Yes",
-      shortNotes: "Bypassed housekeeping/PPE verification under task completion pressure.",
-      envContributed: "Yes",
-      envUnforeseen: "No",
-      envNotes: "Rain and algae created slippery conditions, but this was a foreseeable and mitigable hazard."
-    },
-
-    conclusion: "The primary root cause is Procedural Non-Compliance, as the crew failed to follow established procedures for thorough JSA completion and hazard mitigation (SWP-033) and PPE requirements for site conditions including traction footwear (SWP-047). The incident resulted from the employee slipping on a wet, algae-covered concrete travel path due to inadequate traction from worn boots, which the deficient JSA failed to identify or control, compounded by supervisor absence and lack of peer intervention.",
-    
-    correctiveActions: [
-      { title: "Enhance JSA Quality & Training", desc: "Update JSA templates and conduct safety retraining focusing on identifying travel path and slip/trip hazards, specific mitigation (pre-task cleaning), and footwear checks (SWP-033).", responsible: "Safety Manager", dueDate: "2026-08-15" },
-      { title: "Implement Footwear Audit Program", desc: "Address boot condition company-wide. Establish routine inspections of craft footwear for adequate traction and enforce/audit compliance with slip-resistant requirements (SWP-047).", responsible: "Site Supervisor / Safety Rep", dueDate: "2026-07-30" },
-      { title: "Strengthen Supervisor Oversight", desc: "Require supervisor presence or documented pre-task checks of JSA quality, site conditions, and PPE compliance before starting work. Reinforce peer intervention guidelines.", responsible: "Project Manager / Dale Jones", dueDate: "2026-07-31" },
-      { title: "Formalize area cleaning protocol", desc: "Clear all algae and water immediately from concrete walkway. Develop housekeeping protocol for identifying and clearing slippery surface contaminations periodically.", responsible: "Dale Jones / Kevin Reynolds", dueDate: "2026-07-23" }
-    ],
-
-    procedureViolations: {
-      swp33: "Violation of SWP-033: Crew did not identify potential slip/trip hazards on walking surfaces, failed to list PPE requirements, and basic steps were poorly described. Supervisor did not inspect JSA.",
-      swp47: "Violation of SWP-047: Footwear suitable for conditions was not worn or verified. 'Other' PPE category was noted as inadequate. Supervisor failed to ensure adherence.",
-      other: "Supervisory oversight lapse; supervisor not present. Peer intervention violation as crew did not warn or intervene when unsafe walking actions occurred."
-    },
-
-    additionalNotes: "Witness statements from Leonel Portillo and Justus Young corroborate that water and algae created a slippery travel path. Drag and alcohol testing was conducted, but results were not attached in the file. Corrective actions directly align with prevention of recurrences."
-  };
+  // --- Seed data removed; records come from Firestore ---
 
   // --- Initial Setup and Event Handlers ---
   function initApp() {
-    loadRecordsFromStorage();
-    if (rcaRecords.length === 0) {
-      rcaRecords.push(SEED_RCA);
-      saveRecordsToStorage();
+    // Subscribe to real-time Firestore updates
+    if (window.subscribeToRecords) {
+      window.subscribeToRecords((records) => {
+        rcaRecords = records;
+        renderRegistry();
+        renderParetoSummaryChart();
+        renderSeverityDistributionChart();
+      });
     }
+
+    // Populate assigned-to dropdown
+    if (window.getUsersList) {
+      window.getUsersList().then(users => {
+        const sel = document.getElementById('f-assigned-to');
+        if (sel) {
+          sel.innerHTML = '<option value="">— Unassigned —</option>';
+          users.forEach(u => {
+            sel.innerHTML += `<option value="${u.email}">${u.displayName || u.email}</option>`;
+          });
+        }
+      });
+    }
+
+    // Show/hide admin-only elements
+    const userMgmtBtn = document.getElementById('btn-user-management');
+    if (userMgmtBtn) {
+      userMgmtBtn.style.display = window.isAdmin && window.isAdmin() ? '' : 'none';
+      userMgmtBtn.addEventListener('click', openUserManagement);
+    }
+    const closeUserMgmt = document.getElementById('btn-close-user-mgmt');
+    if (closeUserMgmt) {
+      closeUserMgmt.addEventListener('click', () => document.getElementById('user-mgmt-overlay').classList.add('hidden'));
+    }
+    const addUserBtn = document.getElementById('btn-add-user');
+    if (addUserBtn) {
+      addUserBtn.addEventListener('click', handleAddUser);
+    }
+
+    // Hide write actions for viewers
+    if (window.isViewer && window.isViewer()) {
+      ['btn-new-rca', 'btn-import-excel-trigger', 'btn-bulk-analyze'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
+
+    // Display user name in header
+    const nameEl = document.getElementById('user-display-name');
+    if (nameEl && window.currentUserProfile) {
+      nameEl.textContent = window.currentUserProfile.displayName || window.currentUserProfile.email;
+    }
+
     renderRegistry();
     renderParetoSummaryChart();
     renderSeverityDistributionChart();
@@ -290,41 +209,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Storage & Loading ---
-  function loadRecordsFromStorage() {
+  // --- Storage functions replaced by Firestore (see firestore-service.js) ---
+  // loadRecordsFromStorage and saveRecordsToStorage are no longer used.
+  // Data is loaded via real-time subscription in initApp().
+  // Individual saves go through saveRecordToFirestore().
+
+  async function saveRecordAndSync(record) {
     try {
-      const stored = localStorage.getItem('tig_rca_records');
-      if (stored) {
-        rcaRecords = JSON.parse(stored);
-      }
-      
-      // Clean up duplicates
-      let modified = false;
-      rcaRecords.forEach(r => {
-        if (r.location && (r.location.toUpperCase() === 'FORMOSA PLASTICS' || r.location === 'Formosa Plastics')) {
-          r.location = 'Formosa Plastics Corporation';
-          modified = true;
-        }
-        if (r.supervisor && (r.supervisor === '600 Cameron Gregg Allen' || r.supervisor.trim() === '600 Cameron Gregg Allen')) {
-          r.supervisor = '585 Cameron Gregg Allen';
-          modified = true;
-        }
-      });
-      if (modified && stored) {
-        localStorage.setItem('tig_rca_records', JSON.stringify(rcaRecords));
+      if (window.saveRecordToFirestore) {
+        await window.saveRecordToFirestore(record);
       }
     } catch (e) {
-      console.error("Failed to load records from storage:", e);
-      showToast("Error loading records from cache", "error");
+      console.error('Failed to save record to Firestore:', e);
+      showToast('Error saving to database: ' + e.message, 'error');
     }
   }
-
-  function saveRecordsToStorage() {
-    try {
-      localStorage.setItem('tig_rca_records', JSON.stringify(rcaRecords));
-    } catch (e) {
-      console.error("Failed to save records to storage:", e);
-      showToast("Error saving data to local storage", "error");
-    }
   }
 
   // --- UI Tab Navigation ---
@@ -747,8 +646,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Sort by date descending
         rcaRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        saveRecordsToStorage();
+        // Save all imported records to Firestore
+        rcaRecords.forEach(r => {
+          if (!r.createdBy) r.createdBy = window.currentUserEmail ? window.currentUserEmail() : '';
+          saveRecordAndSync(r);
+        });
         renderRegistry();
         renderParetoSummaryChart();
         renderSeverityDistributionChart();
@@ -773,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- RCA Record CRUD Operations ---
-  function createNewRca() {
+  async function createNewRca() {
     const id = `INC-${Date.now()}`;
     const newRecord = {
       id: id,
@@ -814,21 +716,30 @@ document.addEventListener('DOMContentLoaded', () => {
       primaryCause: "",
       analysisSummary: "",
       conclusion: "",
-      correctiveActions: []
+      correctiveActions: [],
+      assignedTo: '',
+      createdBy: window.currentUserEmail ? window.currentUserEmail() : ''
     };
 
     rcaRecords.unshift(newRecord);
-    saveRecordsToStorage();
+    await saveRecordAndSync(newRecord);
     loadRcaIntoWizard(id);
   }
 
-  function deleteRcaRecord(id) {
-    rcaRecords = rcaRecords.filter(r => r.id !== id);
-    saveRecordsToStorage();
-    renderRegistry();
-    renderParetoSummaryChart();
-    renderSeverityDistributionChart();
-    showToast("Incident investigation deleted", "success");
+  async function deleteRcaRecord(id) {
+    if (!confirm("Are you sure you want to permanently delete this investigation record?")) return;
+    try {
+      if (window.deleteRecordFromFirestore) {
+        await window.deleteRecordFromFirestore(id);
+      }
+      rcaRecords = rcaRecords.filter(r => r.id !== id);
+      renderRegistry();
+      renderParetoSummaryChart();
+      renderSeverityDistributionChart();
+      showToast('Record deleted', 'success');
+    } catch (e) {
+      showToast('Error deleting record: ' + e.message, 'error');
+    }
   }
 
   // --- Wizard Logic ---
@@ -848,6 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('f-location').value = currentRecord.location || '';
     document.getElementById('f-dept-location').value = currentRecord.deptLocation || '';
     document.getElementById('f-supervisor').value = currentRecord.supervisor || '';
+    if (document.getElementById('f-assigned-to')) document.getElementById('f-assigned-to').value = currentRecord.assignedTo || '';
     document.getElementById('f-business-unit').value = currentRecord.businessUnit || '';
     document.getElementById('f-group').value = currentRecord.group || '';
     document.getElementById('f-craft').value = currentRecord.craft || '';
@@ -1115,6 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
       location: document.getElementById('f-location').value.trim(),
       deptLocation: document.getElementById('f-dept-location').value.trim(),
       supervisor: document.getElementById('f-supervisor').value.trim(),
+      assignedTo: document.getElementById('f-assigned-to')?.value || '',
       businessUnit: document.getElementById('f-business-unit').value.trim(),
       group: document.getElementById('f-group').value.trim(),
       craft: document.getElementById('f-craft').value.trim(),
@@ -1226,13 +1139,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  function saveDraftRca() {
+  async function saveDraftRca() {
     const data = getRcaDataFromWizard();
     data.status = "Pending Analysis";
+    data.assignedTo = document.getElementById('f-assigned-to')?.value || '';
+    if (!data.createdBy) data.createdBy = window.currentUserEmail ? window.currentUserEmail() : '';
     
+    await saveRecordAndSync(data);
+    // Update local array
     rcaRecords = rcaRecords.filter(r => r.id !== data.id);
     rcaRecords.unshift(data);
-    saveRecordsToStorage();
     
     showToast("Investigation saved as draft", "success");
     switchTab('dashboard');
@@ -1249,10 +1165,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const data = getRcaDataFromWizard();
     data.status = "Completed";
+    data.assignedTo = document.getElementById('f-assigned-to')?.value || '';
+    if (!data.createdBy) data.createdBy = window.currentUserEmail ? window.currentUserEmail() : '';
     
+    saveRecordAndSync(data);
+    // Update local array
     rcaRecords = rcaRecords.filter(r => r.id !== data.id);
     rcaRecords.unshift(data);
-    saveRecordsToStorage();
     
     showToast("Root Cause Analysis Finalized!", "success");
     loadRcaIntoReport(data.id);
@@ -1969,7 +1888,7 @@ Provide the Root Cause Analysis (RCA) in JSON format matching this EXACT schema:
           rec.correctiveActions = analysisData.correctiveActions || [];
           
           // Save incrementally to prevent losing progress if cancelled or rate-limited
-          saveRecordsToStorage();
+          await saveRecordAndSync(rec);
           successCount++;
         }
       } catch (err) {
@@ -2679,6 +2598,108 @@ Provide the Root Cause Analysis (RCA) in JSON format matching this EXACT schema:
     });
   }
 
-  // Initialize
-  initApp();
+
+  // --- User Management (Admin Only) ---
+  async function openUserManagement() {
+    document.getElementById('user-mgmt-overlay').classList.remove('hidden');
+    await renderUserTable();
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  async function renderUserTable() {
+    const tbody = document.getElementById('user-mgmt-table-body');
+    if (!tbody || !window.loadUsers) return;
+    try {
+      const users = await window.loadUsers();
+      tbody.innerHTML = users.map(u => `
+        <tr style="border-bottom: 1px solid rgba(148,163,184,0.08);">
+          <td style="padding: 10px 12px; font-size: 13px; color: #fff;">${u.displayName || '—'}</td>
+          <td style="padding: 10px 12px; font-size: 13px; color: var(--text-secondary);">${u.email}</td>
+          <td style="padding: 10px 12px;">
+            <select data-uid="${u.uid}" class="role-select" style="padding: 4px 8px; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.15); border-radius: 4px; color: #fff; font-size: 12px;">
+              <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+              <option value="investigator" ${u.role === 'investigator' ? 'selected' : ''}>Investigator</option>
+              <option value="viewer" ${u.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+            </select>
+          </td>
+          <td style="padding: 10px 12px; text-align: right;">
+            <button class="btn-action-icon" data-uid="${u.uid}" data-action="delete" title="Remove user" style="width: 26px; height: 26px; background: transparent; border: 1px solid rgba(239,68,68,0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px; color: #ef4444;"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      // Role change listeners
+      tbody.querySelectorAll('.role-select').forEach(sel => {
+        sel.addEventListener('change', async (e) => {
+          try {
+            await window.updateUserRole(e.target.dataset.uid, e.target.value);
+            showToast('Role updated', 'success');
+          } catch (err) {
+            showToast('Error: ' + err.message, 'error');
+          }
+        });
+      });
+
+      // Delete listeners
+      tbody.querySelectorAll('[data-action="delete"]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Remove this user profile? (They will no longer be able to access the app.)')) return;
+          try {
+            await window.deleteUserProfile(btn.dataset.uid);
+            showToast('User removed', 'success');
+            await renderUserTable();
+            if (window.lucide) window.lucide.createIcons();
+          } catch (err) {
+            showToast('Error: ' + err.message, 'error');
+          }
+        });
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="4" style="padding: 16px; color: var(--text-muted); text-align: center;">Error loading users</td></tr>`;
+    }
+  }
+
+  async function handleAddUser() {
+    const name = document.getElementById('new-user-name').value.trim();
+    const email = document.getElementById('new-user-email').value.trim();
+    const password = document.getElementById('new-user-password').value;
+    const role = document.getElementById('new-user-role').value;
+
+    if (!name || !email || !password) {
+      showToast('Please fill in name, email, and password', 'error');
+      return;
+    }
+    if (password.length < 6) {
+      showToast('Password must be at least 6 characters', 'error');
+      return;
+    }
+
+    try {
+      await window.createUserAccount(email, password, name, role);
+      showToast(`User ${name} created as ${role}`, 'success');
+      document.getElementById('new-user-name').value = '';
+      document.getElementById('new-user-email').value = '';
+      document.getElementById('new-user-password').value = '';
+      await renderUserTable();
+      if (window.lucide) window.lucide.createIcons();
+      // Refresh assigned-to dropdown
+      if (window.getUsersList) {
+        const users = await window.getUsersList();
+        const sel = document.getElementById('f-assigned-to');
+        if (sel) {
+          sel.innerHTML = '<option value="">— Unassigned —</option>';
+          users.forEach(u => {
+            sel.innerHTML += `<option value="${u.email}">${u.displayName || u.email}</option>`;
+          });
+        }
+      }
+    } catch (e) {
+      showToast('Error creating user: ' + e.message, 'error');
+    }
+  }
+
+  // initApp() is now called by firebase-config.js after auth state is confirmed
+  window.initApp = initApp;
 });

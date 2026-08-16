@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      // Any authenticated user can read user profiles
+      allow read: if request.auth != null;
+      // A user can create their OWN profile (bootstrap on first login)
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Only admins can update/delete any user profile
+      allow update, delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    // RCA records: authenticated users can read; investigators and admins can create/update; only admins can delete
+    match /rcaRecords/{docId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'investigator'];
+      allow delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}

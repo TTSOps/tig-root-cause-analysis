@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="../branding/branding_helper.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TIG Root Cause Analysis (RCA) Tool</title>
@@ -11,16 +10,42 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Shared Styles (Fallback is handled in local style.css) -->
-  <link rel="stylesheet" href="../shared/css/shared.css">
   <link rel="stylesheet" href="style.css">
   
   <!-- CDNs for icons, excel parsing, and charts -->
   <script src="https://unpkg.com/lucide@latest" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
+
+  <!-- Firebase v10 Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
+
+  <!-- Login Overlay -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <h2>TIG Root Cause Analysis</h2>
+        <p>Taurus Industrial Group</p>
+      </div>
+      <form id="login-form">
+        <div class="login-field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" placeholder="you@taurusig.com" required autocomplete="email">
+        </div>
+        <div class="login-field">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" placeholder="Enter password" required autocomplete="current-password">
+        </div>
+        <div id="login-error" class="login-error"></div>
+        <button type="submit" class="login-btn">Sign In</button>
+      </form>
+    </div>
+  </div>
 
   <!-- App Container -->
   <div class="app-container">
@@ -59,6 +84,16 @@
           <i data-lucide="plus-circle"></i>
           <span>New Analysis</span>
         </button>
+        <button id="btn-user-management" class="btn btn-secondary btn-icon" style="display:none;">
+          <i data-lucide="users"></i>
+          <span>Users</span>
+        </button>
+        <div class="user-menu">
+          <span id="user-display-name" class="user-name"></span>
+          <button id="btn-logout" class="btn-logout" title="Sign Out">
+            <i data-lucide="log-out"></i>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -327,6 +362,12 @@
                   <div class="form-group">
                     <label for="f-supervisor">Immediate Supervisor *</label>
                     <input type="text" id="f-supervisor" placeholder="e.g. Dale E Jones" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="f-assigned-to">Assigned To</label>
+                    <select id="f-assigned-to">
+                      <option value="">— Unassigned —</option>
+                    </select>
                   </div>
                   <div class="form-group">
                     <label for="f-business-unit">Business Unit</label>
@@ -1220,7 +1261,47 @@
     </div>
   </div>
 
-  <!-- Application Logic -->
+  <!-- Firebase & Application Logic -->
+  <script src="firebase-config.js"></script>
+  <script src="firestore-service.js"></script>
   <script src="app.js"></script>
+  <!-- User Management Modal (Admin Only) -->
+  <div id="user-mgmt-overlay" class="bulk-modal-backdrop hidden" style="z-index: 100002;">
+    <div class="bulk-modal-card" style="width: 640px; max-width: 95vw; padding: 24px; background: #0f172a; border: 1.5px solid rgba(148, 163, 184, 0.15); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.85); box-sizing: border-box;">
+      <div class="bulk-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(148, 163, 184, 0.1); padding-bottom: 14px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i data-lucide="users" class="text-cyan" style="width: 20px; height: 20px;"></i>
+          <h3 style="margin: 0; font-family: var(--font-title); font-size: 16px; font-weight: 700; color: #fff;">User Management</h3>
+        </div>
+        <button class="btn-action-icon text-secondary" id="btn-close-user-mgmt" title="Close" style="width: 28px; height: 28px; background: transparent; border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+          <i data-lucide="x" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
+        </button>
+      </div>
+      <div id="user-mgmt-body">
+        <div class="add-user-form" style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+          <input type="text" id="new-user-name" placeholder="Full Name" style="flex: 1; min-width: 120px; padding: 8px 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.15); border-radius: 6px; color: #fff; font-family: var(--font-body); font-size: 13px;">
+          <input type="email" id="new-user-email" placeholder="Email" style="flex: 1; min-width: 150px; padding: 8px 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.15); border-radius: 6px; color: #fff; font-family: var(--font-body); font-size: 13px;">
+          <input type="password" id="new-user-password" placeholder="Password" style="flex: 0.7; min-width: 100px; padding: 8px 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.15); border-radius: 6px; color: #fff; font-family: var(--font-body); font-size: 13px;">
+          <select id="new-user-role" style="padding: 8px 12px; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.15); border-radius: 6px; color: #fff; font-family: var(--font-body); font-size: 13px;">
+            <option value="investigator">Investigator</option>
+            <option value="viewer">Viewer</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button id="btn-add-user" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px; white-space: nowrap;">Add User</button>
+        </div>
+        <table class="user-mgmt-table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(148,163,184,0.15);">
+              <th style="text-align: left; padding: 8px 12px; font-family: var(--font-title); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">Name</th>
+              <th style="text-align: left; padding: 8px 12px; font-family: var(--font-title); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">Email</th>
+              <th style="text-align: left; padding: 8px 12px; font-family: var(--font-title); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">Role</th>
+              <th style="text-align: right; padding: 8px 12px; font-family: var(--font-title); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="user-mgmt-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
