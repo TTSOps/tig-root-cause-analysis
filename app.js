@@ -224,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Error saving to database: ' + e.message, 'error');
     }
   }
-  }
 
   // --- UI Tab Navigation ---
   function switchTab(tabId) {
