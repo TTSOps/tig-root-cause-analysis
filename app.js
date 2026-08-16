@@ -1476,31 +1476,36 @@ Provide the output strictly as a JSON object with the following structure (do no
 `;
 
     try {
-      let response;
       const model = "gemini-3.5-flash";
-      
       const isLocal = window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
       const useProxy = !isLocal;
+      const maxRetries = 5;
+      let response;
 
-      if (useProxy) {
-        response = await fetch("/api/gemini-proxy", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: model,
-            contents: [{ parts: [{ text: promptText }] }]
-          })
-        });
-      } else {
-        const key = localStorage.getItem("gemini_api_key") || localStorage.getItem("geminiApiKey") || localStorage.getItem("tig_gemini_key") || "";
-        if (!key) throw new Error("Gemini API Key is missing. Please set it in the active session settings on the Portal Hub sidebar.");
-        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }]
-          })
-        });
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (useProxy) {
+          response = await fetch("/api/gemini-proxy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ model, contents: [{ parts: [{ text: promptText }] }] })
+          });
+        } else {
+          const key = localStorage.getItem("gemini_api_key") || localStorage.getItem("geminiApiKey") || localStorage.getItem("tig_gemini_key") || "";
+          if (!key) throw new Error("Gemini API Key is missing.");
+          response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+          });
+        }
+
+        if (response.status === 429 && attempt < maxRetries) {
+          const waitSec = Math.pow(2, attempt + 1) + Math.random() * 2;
+          showToast(`Rate limited. Retrying in ${Math.ceil(waitSec)}s...`, "warning");
+          await new Promise(r => setTimeout(r, waitSec * 1000));
+          continue;
+        }
+        break;
       }
 
       if (!response.ok) {
@@ -1771,44 +1776,64 @@ Provide the Root Cause Analysis (RCA) in JSON format matching this EXACT schema:
     return promptText;
   }
 
-  async function fetchAIAnalysis(promptText) {
+  // Retry helper for 429 rate limiting
+  async function fetchWithRetry(fetchFn, maxRetries = 5) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const response = await fetchFn();
+      if (response.status === 429) {
+        const waitSec = Math.pow(2, attempt + 1) + Math.random() * 2;
+        console.warn(`Rate limited (429). Retrying in ${waitSec.toFixed(1)}s... (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        continue;
+      }
+      return response;
+    }
+    throw new Error('Rate limited by Gemini API after multiple retries. Please wait a minute and try again.');
+  }
+
+  async function fetchAIAnalysis(promptText, maxRetries = 5) {
     const model = "gemini-3.5-flash";
     const isLocal = window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     const useProxy = !isLocal;
-    
-    let response;
 
-    if (useProxy) {
-      response = await fetch("/api/gemini-proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: model,
-          contents: [{ parts: [{ text: promptText }] }]
-        })
-      });
-    } else {
-      const key = localStorage.getItem("gemini_api_key") || localStorage.getItem("geminiApiKey") || localStorage.getItem("tig_gemini_key") || "";
-      if (!key) throw new Error("Gemini API Key is missing. Please set it in the active session settings on the Portal Hub sidebar.");
-      response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }]
-        })
-      });
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      let response;
+
+      if (useProxy) {
+        response = await fetch("/api/gemini-proxy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model, contents: [{ parts: [{ text: promptText }] }] })
+        });
+      } else {
+        const key = localStorage.getItem("gemini_api_key") || localStorage.getItem("geminiApiKey") || localStorage.getItem("tig_gemini_key") || "";
+        if (!key) throw new Error("Gemini API Key is missing.");
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
+      }
+
+      if (response.status === 429 && attempt < maxRetries) {
+        const waitSec = Math.pow(2, attempt + 1) + Math.random() * 2;
+        console.warn(`Rate limited (429). Retrying in ${waitSec.toFixed(1)}s... (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(`API error ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error("Empty response received from Gemini.");
+
+      const cleanJSON = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+      return JSON.parse(cleanJSON);
     }
-
-    if (!response.ok) {
-      throw new Error(`API error ${response.status}`);
-    }
-
-    const data = await response.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) throw new Error("Empty response received from Gemini.");
-
-    const cleanJSON = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
-    return JSON.parse(cleanJSON);
+    throw new Error('Rate limited by Gemini API after multiple retries. Wait a minute and try again.');
   }
 
   async function startBulkAnalysis() {
@@ -1895,8 +1920,8 @@ Provide the Root Cause Analysis (RCA) in JSON format matching this EXACT schema:
         // Continue loop even if one fails
       }
 
-      // Add a slight delay to respect API rate limits
-      await new Promise(resolve => setTimeout(resolve, 600));
+      // Add delay to respect API rate limits (Gemini free tier: ~15 RPM)
+      await new Promise(resolve => setTimeout(resolve, 4000));
     }
 
     // Finish
