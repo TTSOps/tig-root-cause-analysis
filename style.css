@@ -1623,64 +1623,83 @@ body {
   color: #ef4444;
 }
 
+/* Hidden utility */
+.hidden {
+  display: none !important;
+}
+
 /* ==========================================================================
    Print Styles — RCA Report
    ========================================================================== */
 @media print {
-  /* Hide everything except the report canvas */
-  body,
-  html {
+  @page {
+    size: letter portrait;
+    margin: 0.5in;
+  }
+
+  body, html {
     background: #fff !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide non-report elements */
-  .app-header,
-  .login-overlay,
-  #tab-dashboard,
-  #tab-wizard,
-  #tab-predictive-risk,
-  .report-controls-panel,
-  .no-print,
-  .user-menu,
-  .user-mgmt-overlay,
-  .bulk-modal-backdrop,
-  .chart-modal-overlay,
-  footer.app-footer {
+  /* Hide EVERYTHING first */
+  body > * {
     display: none !important;
   }
 
-  /* Force report tab visible */
+  /* Show only the app container */
+  body > #app-container,
+  body > .app-container {
+    display: block !important;
+  }
+
+  /* Inside app container, hide everything */
+  #app-container > *,
+  .app-container > * {
+    display: none !important;
+  }
+
+  /* Show ONLY the report tab */
   #tab-report {
     display: block !important;
-    position: static !important;
     visibility: visible !important;
+    position: static !important;
     overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
-  #tab-report.hidden {
-    display: block !important;
+  .report-controls-panel, .no-print {
+    display: none !important;
   }
 
-  .app-container {
+  #login-overlay, .login-overlay,
+  .bulk-modal-backdrop, .chart-modal-overlay, #user-mgmt-overlay {
+    display: none !important;
+  }
+
+  #app-container, .app-container {
     display: block !important;
     background: #fff !important;
     padding: 0 !important;
     margin: 0 !important;
     max-width: none !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 
-  .tab-pane {
-    background: #fff !important;
-    padding: 0 !important;
-  }
-
-  /* Report canvas styling for print */
-  #printable-report-canvas,
-  .report-document-canvas {
+  #printable-report-canvas, .report-document-canvas {
+    display: block !important;
     background: #fff !important;
     color: #000 !important;
     box-shadow: none !important;
@@ -1690,40 +1709,32 @@ body {
     margin: 0 !important;
     max-width: none !important;
     width: 100% !important;
+    overflow: visible !important;
+    font-size: 11px !important;
   }
 
-  /* Report header */
   .rep-header {
+    display: flex !important;
+    justify-content: space-between !important;
     background: #fff !important;
     border-bottom: 2px solid #111827 !important;
     padding: 12px 0 !important;
     margin-bottom: 16px !important;
   }
 
-  .rep-logo-text,
-  .rep-title {
-    color: #111827 !important;
-  }
+  .rep-logo-text, .rep-title { color: #111827 !important; }
+  .rep-logo-sub, .rep-meta-line { color: #374151 !important; }
 
-  .rep-logo-sub,
-  .rep-meta-line {
-    color: #374151 !important;
-  }
-
-  /* Section titles */
   .rep-sec-title {
     color: #111827 !important;
     border-bottom-color: #9ca3af !important;
     page-break-after: avoid !important;
   }
 
-  /* Text blocks */
-  .rep-text-block p,
-  .rep-block-title,
-  .rep-bullets-list,
-  .rep-bullets-list li {
-    color: #1f2937 !important;
-  }
+  .rep-section { page-break-inside: avoid !important; }
+  .page-break-before { page-break-before: always !important; }
+
+  .rep-text-block p, .rep-block-title, .rep-bullets-list, .rep-bullets-list li { color: #1f2937 !important; }
 
   .rep-highlight-box {
     background: #f3f4f6 !important;
@@ -1732,23 +1743,15 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* Tables */
-  .rep-meta-table,
-  .rep-pareto-table,
-  .rep-actions-table,
-  .rep-ruled-out-table {
+  .rep-meta-table, .rep-pareto-table, .rep-actions-table, .rep-ruled-out-table {
     border-collapse: collapse !important;
     width: 100% !important;
   }
 
-  .rep-meta-table td,
-  .rep-meta-table th,
-  .rep-pareto-table td,
-  .rep-pareto-table th,
-  .rep-actions-table td,
-  .rep-actions-table th,
-  .rep-ruled-out-table td,
-  .rep-ruled-out-table th {
+  .rep-meta-table td, .rep-meta-table th,
+  .rep-pareto-table td, .rep-pareto-table th,
+  .rep-actions-table td, .rep-actions-table th,
+  .rep-ruled-out-table td, .rep-ruled-out-table th {
     border: 1px solid #d1d5db !important;
     padding: 6px 8px !important;
     color: #1f2937 !important;
@@ -1756,13 +1759,7 @@ body {
     background: #fff !important;
   }
 
-  .rep-lbl {
-    background: #f3f4f6 !important;
-    font-weight: 700 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
+  .rep-lbl,
   .rep-pareto-table thead th,
   .rep-actions-table thead th,
   .rep-ruled-out-table thead th {
@@ -1772,71 +1769,19 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* Pareto bars */
-  .pareto-bar-bg {
-    background: #e5e7eb !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
+  .pareto-bar-bg { background: #e5e7eb !important; -webkit-print-color-adjust: exact !important; }
+  .pareto-bar-fill { background: #f97316 !important; -webkit-print-color-adjust: exact !important; }
 
-  .pareto-bar-fill {
-    background: #f97316 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
+  .rep-whys-chain { background: #f9fafb !important; border-color: #d1d5db !important; -webkit-print-color-adjust: exact !important; }
+  .rep-why-item { color: #1f2937 !important; }
 
-  /* Whys chain */
-  .rep-whys-chain {
-    background: #f9fafb !important;
-    border-color: #d1d5db !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
+  .rep-violation-box { border-color: #d1d5db !important; background: #fff !important; color: #1f2937 !important; }
 
-  .rep-why-item {
-    color: #1f2937 !important;
-  }
+  .status-badge-inline { background: #d1fae5 !important; color: #065f46 !important; -webkit-print-color-adjust: exact !important; }
 
-  /* Violation boxes */
-  .rep-violation-box {
-    border-color: #d1d5db !important;
-    background: #fff !important;
-    color: #1f2937 !important;
-  }
+  .rep-footer { page-break-inside: avoid !important; }
+  .sign-line { color: #1f2937 !important; }
 
-  /* Status badge */
-  .status-badge-inline {
-    background: #d1fae5 !important;
-    color: #065f46 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* Footer / Sign-off */
-  .rep-footer {
-    page-break-inside: avoid !important;
-  }
-
-  .sign-line {
-    color: #1f2937 !important;
-  }
-
-  /* Page breaks */
-  .page-break-before {
-    page-break-before: always !important;
-  }
-
-  .rep-section {
-    page-break-inside: avoid !important;
-  }
-
-  /* Global text */
-  * {
-    color: #1f2937 !important;
-  }
-
-  strong, b, h1, h2, h3, h4 {
-    color: #111827 !important;
-  }
+  * { color: #1f2937 !important; }
+  strong, b, h1, h2, h3, h4 { color: #111827 !important; }
 }
-
