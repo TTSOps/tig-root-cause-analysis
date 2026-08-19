@@ -1630,6 +1630,7 @@ body {
 
 /* ==========================================================================
    Print Styles — RCA Report
+   Uses body.printing class added by JS before window.print()
    ========================================================================== */
 @media print {
   @page {
@@ -1637,7 +1638,8 @@ body {
     margin: 0.5in;
   }
 
-  body, html {
+  body.printing,
+  body.printing html {
     background: #fff !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1648,25 +1650,26 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* Hide EVERYTHING first */
-  body > * {
+  /* Explicitly hide everything we DON'T want */
+  body.printing .app-header,
+  body.printing #login-overlay,
+  body.printing .login-overlay,
+  body.printing #tab-dashboard,
+  body.printing #tab-wizard,
+  body.printing #tab-predictive-risk,
+  body.printing .report-controls-panel,
+  body.printing .no-print,
+  body.printing .user-menu,
+  body.printing #user-mgmt-overlay,
+  body.printing .user-mgmt-overlay,
+  body.printing .bulk-modal-backdrop,
+  body.printing .chart-modal-overlay {
     display: none !important;
   }
 
-  /* Show only the app container */
-  body > #app-container,
-  body > .app-container {
-    display: block !important;
-  }
-
-  /* Inside app container, hide everything */
-  #app-container > *,
-  .app-container > * {
-    display: none !important;
-  }
-
-  /* Show ONLY the report tab */
-  #tab-report {
+  /* Force report tab visible even if it has .hidden class */
+  body.printing #tab-report,
+  body.printing #tab-report.hidden {
     display: block !important;
     visibility: visible !important;
     position: static !important;
@@ -1678,16 +1681,9 @@ body {
     margin: 0 !important;
   }
 
-  .report-controls-panel, .no-print {
-    display: none !important;
-  }
-
-  #login-overlay, .login-overlay,
-  .bulk-modal-backdrop, .chart-modal-overlay, #user-mgmt-overlay {
-    display: none !important;
-  }
-
-  #app-container, .app-container {
+  /* Reset app container */
+  body.printing .app-container,
+  body.printing #app-container {
     display: block !important;
     background: #fff !important;
     padding: 0 !important;
@@ -1698,7 +1694,9 @@ body {
     overflow: visible !important;
   }
 
-  #printable-report-canvas, .report-document-canvas {
+  /* Report canvas — fill the page */
+  body.printing #printable-report-canvas,
+  body.printing .report-document-canvas {
     display: block !important;
     background: #fff !important;
     color: #000 !important;
@@ -1713,7 +1711,8 @@ body {
     font-size: 11px !important;
   }
 
-  .rep-header {
+  /* Report header */
+  body.printing .rep-header {
     display: flex !important;
     justify-content: space-between !important;
     background: #fff !important;
@@ -1722,36 +1721,52 @@ body {
     margin-bottom: 16px !important;
   }
 
-  .rep-logo-text, .rep-title { color: #111827 !important; }
-  .rep-logo-sub, .rep-meta-line { color: #374151 !important; }
+  body.printing .rep-logo-text,
+  body.printing .rep-title { color: #111827 !important; }
 
-  .rep-sec-title {
+  body.printing .rep-logo-sub,
+  body.printing .rep-meta-line { color: #374151 !important; }
+
+  /* Sections */
+  body.printing .rep-sec-title {
     color: #111827 !important;
     border-bottom-color: #9ca3af !important;
     page-break-after: avoid !important;
   }
 
-  .rep-section { page-break-inside: avoid !important; }
-  .page-break-before { page-break-before: always !important; }
+  body.printing .rep-section { page-break-inside: avoid !important; }
+  body.printing .page-break-before { page-break-before: always !important; }
 
-  .rep-text-block p, .rep-block-title, .rep-bullets-list, .rep-bullets-list li { color: #1f2937 !important; }
+  /* Text */
+  body.printing .rep-text-block p,
+  body.printing .rep-block-title,
+  body.printing .rep-bullets-list,
+  body.printing .rep-bullets-list li { color: #1f2937 !important; }
 
-  .rep-highlight-box {
+  body.printing .rep-highlight-box {
     background: #f3f4f6 !important;
     border-left: 4px solid #f97316 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  .rep-meta-table, .rep-pareto-table, .rep-actions-table, .rep-ruled-out-table {
+  /* Tables */
+  body.printing .rep-meta-table,
+  body.printing .rep-pareto-table,
+  body.printing .rep-actions-table,
+  body.printing .rep-ruled-out-table {
     border-collapse: collapse !important;
     width: 100% !important;
   }
 
-  .rep-meta-table td, .rep-meta-table th,
-  .rep-pareto-table td, .rep-pareto-table th,
-  .rep-actions-table td, .rep-actions-table th,
-  .rep-ruled-out-table td, .rep-ruled-out-table th {
+  body.printing .rep-meta-table td,
+  body.printing .rep-meta-table th,
+  body.printing .rep-pareto-table td,
+  body.printing .rep-pareto-table th,
+  body.printing .rep-actions-table td,
+  body.printing .rep-actions-table th,
+  body.printing .rep-ruled-out-table td,
+  body.printing .rep-ruled-out-table th {
     border: 1px solid #d1d5db !important;
     padding: 6px 8px !important;
     color: #1f2937 !important;
@@ -1759,29 +1774,41 @@ body {
     background: #fff !important;
   }
 
-  .rep-lbl,
-  .rep-pareto-table thead th,
-  .rep-actions-table thead th,
-  .rep-ruled-out-table thead th {
+  body.printing .rep-lbl,
+  body.printing .rep-pareto-table thead th,
+  body.printing .rep-actions-table thead th,
+  body.printing .rep-ruled-out-table thead th {
     background: #f3f4f6 !important;
     font-weight: 700 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  .pareto-bar-bg { background: #e5e7eb !important; -webkit-print-color-adjust: exact !important; }
-  .pareto-bar-fill { background: #f97316 !important; -webkit-print-color-adjust: exact !important; }
+  /* Pareto bars */
+  body.printing .pareto-bar-bg { background: #e5e7eb !important; -webkit-print-color-adjust: exact !important; }
+  body.printing .pareto-bar-fill { background: #f97316 !important; -webkit-print-color-adjust: exact !important; }
 
-  .rep-whys-chain { background: #f9fafb !important; border-color: #d1d5db !important; -webkit-print-color-adjust: exact !important; }
-  .rep-why-item { color: #1f2937 !important; }
+  /* Whys chain */
+  body.printing .rep-whys-chain { background: #f9fafb !important; border-color: #d1d5db !important; -webkit-print-color-adjust: exact !important; }
+  body.printing .rep-why-item { color: #1f2937 !important; }
 
-  .rep-violation-box { border-color: #d1d5db !important; background: #fff !important; color: #1f2937 !important; }
+  /* Violations */
+  body.printing .rep-violation-box { border-color: #d1d5db !important; background: #fff !important; color: #1f2937 !important; }
 
-  .status-badge-inline { background: #d1fae5 !important; color: #065f46 !important; -webkit-print-color-adjust: exact !important; }
+  /* Status badge */
+  body.printing .status-badge-inline { background: #d1fae5 !important; color: #065f46 !important; -webkit-print-color-adjust: exact !important; }
 
-  .rep-footer { page-break-inside: avoid !important; }
-  .sign-line { color: #1f2937 !important; }
+  /* Sign-off */
+  body.printing .rep-footer { page-break-inside: avoid !important; }
+  body.printing .sign-line { color: #1f2937 !important; }
 
-  * { color: #1f2937 !important; }
-  strong, b, h1, h2, h3, h4 { color: #111827 !important; }
+  /* Global text overrides */
+  body.printing * { color: #1f2937 !important; }
+  body.printing strong,
+  body.printing b,
+  body.printing h1,
+  body.printing h2,
+  body.printing h3,
+  body.printing h4 { color: #111827 !important; }
 }
+

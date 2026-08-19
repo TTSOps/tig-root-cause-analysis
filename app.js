@@ -159,7 +159,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('btn-report-back-wizard').addEventListener('click', () => switchTab('wizard'));
     document.getElementById('btn-report-back-dash').addEventListener('click', () => switchTab('dashboard'));
-    document.getElementById('btn-report-print').addEventListener('click', () => window.print());
+    document.getElementById('btn-report-print').addEventListener('click', () => {
+      document.body.classList.add('printing');
+      setTimeout(() => {
+        window.print();
+        document.body.classList.remove('printing');
+      }, 100);
+    });
     
     const printRiskBtn = document.getElementById('btn-print-risk-summary');
     if (printRiskBtn) {
