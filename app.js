@@ -2692,26 +2692,39 @@ Provide the Root Cause Analysis (RCA) in JSON format matching this EXACT schema:
   }
 
   async function handleAddUser() {
-    const name = document.getElementById('new-user-name').value.trim();
-    const email = document.getElementById('new-user-email').value.trim();
-    const password = document.getElementById('new-user-password').value;
-    const role = document.getElementById('new-user-role').value;
+    const nameEl = document.getElementById('new-user-name');
+    const emailEl = document.getElementById('new-user-email');
+    const passwordEl = document.getElementById('new-user-password');
+    const roleEl = document.getElementById('new-user-role');
+    const addBtn = document.getElementById('btn-add-user');
+
+    const name = nameEl.value.trim();
+    const email = emailEl.value.trim();
+    const password = passwordEl.value;
+    const role = roleEl.value;
 
     if (!name || !email || !password) {
-      showToast('Please fill in name, email, and password', 'error');
+      alert('Please fill in name, email, and password.');
       return;
     }
     if (password.length < 6) {
-      showToast('Password must be at least 6 characters', 'error');
+      alert('Password must be at least 6 characters.');
       return;
     }
 
+    // Show loading state
+    const originalText = addBtn.textContent;
+    addBtn.textContent = 'Creating...';
+    addBtn.disabled = true;
+
     try {
+      console.log('Creating user:', email, name, role);
       await window.createUserAccount(email, password, name, role);
-      showToast(`User ${name} created as ${role}`, 'success');
-      document.getElementById('new-user-name').value = '';
-      document.getElementById('new-user-email').value = '';
-      document.getElementById('new-user-password').value = '';
+      console.log('User created successfully');
+      alert(`✅ User "${name}" created as ${role}.\nThey can now sign in with: ${email}`);
+      nameEl.value = '';
+      emailEl.value = '';
+      passwordEl.value = '';
       await renderUserTable();
       if (window.lucide) window.lucide.createIcons();
       // Refresh assigned-to dropdown
@@ -2726,7 +2739,11 @@ Provide the Root Cause Analysis (RCA) in JSON format matching this EXACT schema:
         }
       }
     } catch (e) {
-      showToast('Error creating user: ' + e.message, 'error');
+      console.error('Error creating user:', e);
+      alert('❌ Error creating user: ' + e.message);
+    } finally {
+      addBtn.textContent = originalText;
+      addBtn.disabled = false;
     }
   }
 
