@@ -5,8 +5,11 @@ service cloud.firestore {
     match /users/{userId} {
       // Any authenticated user can read user profiles
       allow read: if request.auth != null;
-      // A user can create their OWN profile (bootstrap on first login)
-      allow create: if request.auth != null && request.auth.uid == userId;
+      // A user can create their OWN profile (bootstrap) OR an admin can create any profile
+      allow create: if request.auth != null && (
+        request.auth.uid == userId ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
       // Only admins can update/delete any user profile
       allow update, delete: if request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
