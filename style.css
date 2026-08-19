@@ -1734,7 +1734,6 @@ body {
     page-break-after: avoid !important;
   }
 
-  body.printing .rep-section { page-break-inside: avoid !important; }
   body.printing .page-break-before { page-break-before: always !important; }
 
   /* Text */
