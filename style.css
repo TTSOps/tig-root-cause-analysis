@@ -1622,3 +1622,221 @@ body {
 .btn-logout:hover i {
   color: #ef4444;
 }
+
+/* ==========================================================================
+   Print Styles — RCA Report
+   ========================================================================== */
+@media print {
+  /* Hide everything except the report canvas */
+  body,
+  html {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide non-report elements */
+  .app-header,
+  .login-overlay,
+  #tab-dashboard,
+  #tab-wizard,
+  #tab-predictive-risk,
+  .report-controls-panel,
+  .no-print,
+  .user-menu,
+  .user-mgmt-overlay,
+  .bulk-modal-backdrop,
+  .chart-modal-overlay,
+  footer.app-footer {
+    display: none !important;
+  }
+
+  /* Force report tab visible */
+  #tab-report {
+    display: block !important;
+    position: static !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  #tab-report.hidden {
+    display: block !important;
+  }
+
+  .app-container {
+    display: block !important;
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+
+  .tab-pane {
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  /* Report canvas styling for print */
+  #printable-report-canvas,
+  .report-document-canvas {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  /* Report header */
+  .rep-header {
+    background: #fff !important;
+    border-bottom: 2px solid #111827 !important;
+    padding: 12px 0 !important;
+    margin-bottom: 16px !important;
+  }
+
+  .rep-logo-text,
+  .rep-title {
+    color: #111827 !important;
+  }
+
+  .rep-logo-sub,
+  .rep-meta-line {
+    color: #374151 !important;
+  }
+
+  /* Section titles */
+  .rep-sec-title {
+    color: #111827 !important;
+    border-bottom-color: #9ca3af !important;
+    page-break-after: avoid !important;
+  }
+
+  /* Text blocks */
+  .rep-text-block p,
+  .rep-block-title,
+  .rep-bullets-list,
+  .rep-bullets-list li {
+    color: #1f2937 !important;
+  }
+
+  .rep-highlight-box {
+    background: #f3f4f6 !important;
+    border-left: 4px solid #f97316 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Tables */
+  .rep-meta-table,
+  .rep-pareto-table,
+  .rep-actions-table,
+  .rep-ruled-out-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  .rep-meta-table td,
+  .rep-meta-table th,
+  .rep-pareto-table td,
+  .rep-pareto-table th,
+  .rep-actions-table td,
+  .rep-actions-table th,
+  .rep-ruled-out-table td,
+  .rep-ruled-out-table th {
+    border: 1px solid #d1d5db !important;
+    padding: 6px 8px !important;
+    color: #1f2937 !important;
+    font-size: 10px !important;
+    background: #fff !important;
+  }
+
+  .rep-lbl {
+    background: #f3f4f6 !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .rep-pareto-table thead th,
+  .rep-actions-table thead th,
+  .rep-ruled-out-table thead th {
+    background: #f3f4f6 !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Pareto bars */
+  .pareto-bar-bg {
+    background: #e5e7eb !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .pareto-bar-fill {
+    background: #f97316 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Whys chain */
+  .rep-whys-chain {
+    background: #f9fafb !important;
+    border-color: #d1d5db !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .rep-why-item {
+    color: #1f2937 !important;
+  }
+
+  /* Violation boxes */
+  .rep-violation-box {
+    border-color: #d1d5db !important;
+    background: #fff !important;
+    color: #1f2937 !important;
+  }
+
+  /* Status badge */
+  .status-badge-inline {
+    background: #d1fae5 !important;
+    color: #065f46 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Footer / Sign-off */
+  .rep-footer {
+    page-break-inside: avoid !important;
+  }
+
+  .sign-line {
+    color: #1f2937 !important;
+  }
+
+  /* Page breaks */
+  .page-break-before {
+    page-break-before: always !important;
+  }
+
+  .rep-section {
+    page-break-inside: avoid !important;
+  }
+
+  /* Global text */
+  * {
+    color: #1f2937 !important;
+  }
+
+  strong, b, h1, h2, h3, h4 {
+    color: #111827 !important;
+  }
+}
+
