@@ -141,11 +141,28 @@ window.createUserAccount = async function(email, password, displayName, role) {
   let secondaryApp;
   try {
     const firebaseConfig = firebase.app().options;
-    secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary');
+    secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
     const secondaryAuth = secondaryApp.auth();
 
-    const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
-    const uid = cred.user.uid;
+    let uid;
+
+    try {
+      // Try to create the account
+      const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+      uid = cred.user.uid;
+    } catch (createError) {
+      if (createError.code === 'auth/email-already-in-use') {
+        // Account exists — sign in to get the UID and create the profile
+        try {
+          const cred = await secondaryAuth.signInWithEmailAndPassword(email, password);
+          uid = cred.user.uid;
+        } catch (signInError) {
+          throw new Error('Account exists but password does not match. Cannot recover profile.');
+        }
+      } else {
+        throw createError;
+      }
+    }
 
     const userData = {
       email,
@@ -154,7 +171,7 @@ window.createUserAccount = async function(email, password, displayName, role) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    await window.db.collection('users').doc(uid).set(userData);
+    await window.db.collection('users').doc(uid).set(userData, { merge: true });
     
     await secondaryAuth.signOut();
     
