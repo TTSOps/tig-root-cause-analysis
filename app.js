@@ -7,6 +7,32 @@ document.addEventListener('DOMContentLoaded', () => {
   let rcaRecords = [];
   let currentRecord = null;
   let activeStep = 1;
+  let currentWhyQuestions = null; // Incident-specific 5 Whys questions (from AI or saved record)
+  let whysAnalysisInFlight = false;
+
+  // --- 5 Whys constants (shared by single, bulk, and dedicated 5 Whys prompts) ---
+  const FIVE_WHYS_SCHEMA = `[
+    { "q": "Why 1 question, specific to THIS incident's effect", "a": "Direct physical cause, grounded in the facts provided" },
+    { "q": "Why 2 question that asks why answer 1 happened", "a": "Answer" },
+    { "q": "Why 3 question that asks why answer 2 happened", "a": "Answer" },
+    { "q": "Why 4 question that asks why answer 3 happened", "a": "Answer" },
+    { "q": "Why 5 question that asks why answer 4 happened", "a": "Systemic / procedural / management-system root cause" }
+  ]`;
+  const GENERIC_WHY_QUESTIONS = [
+    "Why did the incident effect occur?",
+    "Why did that condition or action exist?",
+    "Why was that not prevented or controlled?",
+    "Why did existing controls (JSA, PPE, supervision) fail to catch it?",
+    "Why did the management system allow this gap? (procedural root cause)"
+  ];
+  // Old hardcoded questions from the knee-injury template; treated as generic on legacy records.
+  const LEGACY_WHY_QUESTIONS = [
+    "Why did the employee sustain a left knee injury?",
+    "Why did his foot slip?",
+    "Why was the employee exposed to this unmitigated slip hazard?",
+    "Why were hazard identification, mitigation steps, and PPE controls not followed?",
+    "Why was there non-compliance with JSA, PPE, and hazard control procedures?"
+  ];
   let summaryChart = null;
   let severityChart = null;
   let maximizedChart = null;
@@ -188,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('btn-add-action').addEventListener('click', () => addCorrectiveActionRow('', '', '', ''));
     document.getElementById('btn-ai-generate').addEventListener('click', generateRcaWithAI);
+    document.getElementById('btn-ai-whys')?.addEventListener('click', () => analyzeFiveWhys({ force: true }));
 
     // Accordion setup
     document.querySelectorAll('.accordion-toggle').forEach(toggle => {
@@ -818,19 +845,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dq-env-notes').value = dq.envNotes || '';
 
     // Populate Step 3: 5 Whys
-    const whys = currentRecord.fiveWhys || [
-      { q: "Why did the employee sustain a left knee injury?", a: "" },
-      { q: "Why did his foot slip?", a: "" },
-      { q: "Why was the employee exposed to this unmitigated slip hazard?", a: "" },
-      { q: "Why were hazard identification, mitigation steps, and PPE controls not followed?", a: "" },
-      { q: "Why was there non-compliance with JSA, PPE, and hazard control procedures?", a: "" }
-    ];
+    const whys = currentRecord.fiveWhys || [];
     document.getElementById('why-incident').value = currentRecord.description || '';
-    document.getElementById('why-1').value = whys[0]?.a || '';
-    document.getElementById('why-2').value = whys[1]?.a || '';
-    document.getElementById('why-3').value = whys[2]?.a || '';
-    document.getElementById('why-4').value = whys[3]?.a || '';
-    document.getElementById('why-5').value = whys[4]?.a || '';
+    applyFiveWhysToForm(whys);
 
     // Populate Step 4: KT Matrix
     const kt = currentRecord.ktAnalysis || {};
@@ -965,6 +982,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById(`step-content-${activeStep}`).classList.remove('hidden');
     document.getElementById(`step-content-${activeStep}`).classList.add('active');
 
+    // Auto-run the 5 Whys when the step opens with an empty chain
+    if (activeStep === 3) {
+      renderWhyQuestions();
+      const whyIncident = document.getElementById('why-incident');
+      if (!whyIncident.value.trim()) whyIncident.value = document.getElementById('f-description').value.trim();
+      if (whysAreEmpty()) analyzeFiveWhys();
+    }
+
     // Update active sidebar steps
     document.querySelectorAll('.wizard-step').forEach(el => {
       const stepNum = parseInt(el.getAttribute('data-step'));
@@ -1085,13 +1110,10 @@ document.addEventListener('DOMContentLoaded', () => {
         envNotes: document.getElementById('dq-env-notes').value.trim()
       },
 
-      fiveWhys: [
-        { q: "Why did the employee sustain a left knee injury?", a: document.getElementById('why-1').value.trim() },
-        { q: "Why did his foot slip?", a: document.getElementById('why-2').value.trim() },
-        { q: "Why was the employee exposed to this unmitigated slip hazard?", a: document.getElementById('why-3').value.trim() },
-        { q: "Why were hazard identification, mitigation steps, and PPE controls not followed?", a: document.getElementById('why-4').value.trim() },
-        { q: "Why was there non-compliance with JSA, PPE, and hazard control procedures?", a: document.getElementById('why-5').value.trim() }
-      ],
+      fiveWhys: [1, 2, 3, 4, 5].map(n => ({
+        q: getWhyQuestion(n - 1),
+        a: document.getElementById(`why-${n}`).value.trim()
+      })),
 
       ktAnalysis: {
         whatIs: document.getElementById('kt-what-is').value.trim(),
@@ -1235,7 +1257,8 @@ document.addEventListener('DOMContentLoaded', () => {
     whys.forEach((w, idx) => {
       const div = document.createElement('div');
       div.className = "rep-why-item";
-      div.innerHTML = `<span class="rep-why-label">Why ${idx + 1}:</span> ${w.a || '(Not answered)'}`;
+      const qText = w.q && !GENERIC_WHY_QUESTIONS.includes(w.q) && !LEGACY_WHY_QUESTIONS.includes(w.q) ? ` <em>${escapeWhyHtml(w.q)}</em><br>` : ' ';
+      div.innerHTML = `<span class="rep-why-label">Why ${idx + 1}:</span>${qText}${escapeWhyHtml(w.a) || '(Not answered)'}`;
       whysContainer.appendChild(div);
     });
 
@@ -1413,13 +1436,7 @@ Provide the output strictly as a JSON object with the following structure (do no
     "complacency": "Rationale for ruling out RC 8",
     "deliberate": "Rationale for ruling out RC 9"
   },
-  "fiveWhys": [
-    { "q": "Why 1 question", "a": "Why 1 answer" },
-    { "q": "Why 2 question", "a": "Why 2 answer" },
-    { "q": "Why 3 question", "a": "Why 3 answer" },
-    { "q": "Why 4 question", "a": "Why 4 answer" },
-    { "q": "Why 5 question", "a": "Why 5 answer" }
-  ],
+  "fiveWhys": ${FIVE_WHYS_SCHEMA},
   "ktAnalysis": {
     "whatIs": "Details on what occurred",
     "whatIsNot": "Details on what did not occur",
@@ -1567,12 +1584,7 @@ Provide the output strictly as a JSON object with the following structure (do no
       document.getElementById('dq-env-notes').value = dq.envNotes || '';
 
       // Whys
-      const whys = parsed.fiveWhys || [];
-      document.getElementById('why-1').value = whys[0]?.a || '';
-      document.getElementById('why-2').value = whys[1]?.a || '';
-      document.getElementById('why-3').value = whys[2]?.a || '';
-      document.getElementById('why-4').value = whys[3]?.a || '';
-      document.getElementById('why-5').value = whys[4]?.a || '';
+      applyFiveWhysToForm(parsed.fiveWhys || []);
 
       // KT
       const kt = parsed.ktAnalysis || {};
@@ -1764,6 +1776,7 @@ Provide the Root Cause Analysis (RCA) in JSON format matching this EXACT schema:
     "envUnforeseen": "Yes/No",
     "envNotes": "Rain, algae, walking surface details"
   },
+  "fiveWhys": ${FIVE_WHYS_SCHEMA},
   "conclusion": "Paragraph summarizing root cause, contributing factors, and mechanism.",
   "correctiveActions": [
     { "title": "Corrective Action 1 Title", "desc": "Detailed description of action (link to SWP-033, SWP-047 if appropriate)", "responsible": "Safety Manager or Supervisor Name", "dueDate": "YYYY-MM-DD" },
@@ -1780,6 +1793,138 @@ Provide the Root Cause Analysis (RCA) in JSON format matching this EXACT schema:
 }
 `;
     return promptText;
+  }
+
+  // --- 5 Whys Auto-Analysis ---
+  function escapeWhyHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function getWhyQuestion(idx) {
+    return (currentWhyQuestions && currentWhyQuestions[idx]) || GENERIC_WHY_QUESTIONS[idx];
+  }
+
+  function renderWhyQuestions() {
+    for (let n = 1; n <= 5; n++) {
+      const ta = document.getElementById(`why-${n}`);
+      if (!ta) continue;
+      const row = ta.closest('.why-row');
+      let label = row.querySelector('.why-question');
+      if (!label) {
+        label = document.createElement('div');
+        label.className = 'why-question';
+        row.insertBefore(label, ta);
+      }
+      const q = currentWhyQuestions && currentWhyQuestions[n - 1];
+      label.textContent = q || '';
+      ta.placeholder = q ? 'Answer...' : GENERIC_WHY_QUESTIONS[n - 1];
+    }
+  }
+
+  // Loads a fiveWhys array ([{q, a}]) into the Step 3 form, keeping incident-specific questions.
+  function applyFiveWhysToForm(whys) {
+    whys = Array.isArray(whys) ? whys : [];
+    const qs = whys.map(w => w?.q || '');
+    const hasRealQuestions = qs.some(q => q && !LEGACY_WHY_QUESTIONS.includes(q) && !GENERIC_WHY_QUESTIONS.includes(q));
+    currentWhyQuestions = hasRealQuestions ? qs : null;
+    for (let n = 1; n <= 5; n++) {
+      document.getElementById(`why-${n}`).value = whys[n - 1]?.a || '';
+    }
+    renderWhyQuestions();
+  }
+
+  function whysAreEmpty() {
+    return [1, 2, 3, 4, 5].every(n => !document.getElementById(`why-${n}`).value.trim());
+  }
+
+  function setWhysStatus(text) {
+    const el = document.getElementById('whys-ai-status');
+    if (el) el.textContent = text;
+  }
+
+  function gatherWizardIncidentContext() {
+    const val = id => (document.getElementById(id)?.value || '').trim();
+    return {
+      employee: val('f-employee-name'),
+      location: val('f-location'),
+      craft: val('f-craft'),
+      date: val('f-date'),
+      hoursOnDuty: val('f-hours-on-duty'),
+      jhaDisc: val('f-jha-disc'),
+      permitDisc: val('f-permit-disc'),
+      supervisionIssues: val('f-supervision-issues'),
+      shortcuts: val('f-shortcuts'),
+      complicitBehaviors: val('f-complicit-behaviors'),
+      unsafeConditions: val('f-unsafe-conditions'),
+      unsafeActs: val('f-unsafe-acts'),
+      ppeDetails: val('f-ppe-details'),
+      envConditions: val('f-env-conditions'),
+      initialComments: val('f-initial-comments')
+    };
+  }
+
+  // Dedicated AI pass for just the 5 Whys chain.
+  // force=false: only runs when the chain is empty (auto mode, never overwrites user work).
+  async function analyzeFiveWhys({ force = false } = {}) {
+    if (whysAnalysisInFlight) return;
+    const effect = document.getElementById('why-incident').value.trim() || document.getElementById('f-description').value.trim();
+    if (!effect) {
+      if (force) showToast("Enter an incident description (Step 1) or Incident Effect first.", "error");
+      setWhysStatus("Add an incident description in Step 1 so AI can build the 5 Whys.");
+      return;
+    }
+    if (!force && !whysAreEmpty()) return;
+    if (force && !whysAreEmpty() && !confirm("Replace the current 5 Whys answers with a fresh AI analysis?")) return;
+
+    const btn = document.getElementById('btn-ai-whys');
+    const chain = document.querySelector('#step-content-3 .whys-chain');
+    whysAnalysisInFlight = true;
+    if (btn) btn.disabled = true;
+    chain?.classList.add('analyzing');
+    setWhysStatus("Gemini is tracing the causal chain...");
+
+    const promptText = `
+You are a professional HSE incident investigator for Taurus Industrial Group (TIG).
+Perform a rigorous 5 Whys analysis for the incident below.
+
+Rules:
+- Each question must ask "why" about the PREVIOUS answer, forming one continuous causal chain.
+- Why 1 addresses the direct/physical cause of the effect. Why 5 must reach a systemic, procedural, or management-system root cause (planning, JSA/permit quality, supervision, training, culture), not blame on an individual.
+- Be specific to the facts given. Do not invent injuries, equipment, or conditions that are not supported; if a link is inferred, phrase it cautiously (e.g. "likely").
+- Keep each answer to 1-2 sentences.
+- Do NOT refer to "Turnaround Tech Service"; use "TIG".
+
+Incident Effect / Description:
+${effect}
+
+Investigation Metadata:
+${JSON.stringify(gatherWizardIncidentContext(), null, 2)}
+
+Return ONLY a JSON object (no markdown):
+{ "fiveWhys": ${FIVE_WHYS_SCHEMA} }
+`;
+
+    try {
+      const parsed = await fetchAIAnalysis(promptText);
+      const whys = Array.isArray(parsed) ? parsed : parsed?.fiveWhys;
+      if (!Array.isArray(whys) || whys.length === 0) throw new Error("AI returned no 5 Whys.");
+      // Bail if the user typed in the chain while we were waiting (auto mode only)
+      if (!force && !whysAreEmpty()) {
+        setWhysStatus("Kept your manual entries. Click Auto-Analyze to replace them.");
+        return;
+      }
+      applyFiveWhysToForm(whys.slice(0, 5));
+      setWhysStatus("AI-generated chain. Review and edit before finalizing.");
+      showToast("5 Whys analysis generated.", "success");
+    } catch (err) {
+      console.error("5 Whys AI error:", err);
+      setWhysStatus("AI analysis failed. Click Auto-Analyze to retry.");
+      showToast(`5 Whys analysis failed: ${err.message}`, "error");
+    } finally {
+      whysAnalysisInFlight = false;
+      if (btn) btn.disabled = false;
+      chain?.classList.remove('analyzing');
+    }
   }
 
   // Retry helper for 429 rate limiting
